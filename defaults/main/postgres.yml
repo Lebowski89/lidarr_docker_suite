@@ -15,7 +15,7 @@ lidarr_postgres_basics_restart_policy: 'unless-stopped'
 ################################
 
 lidarr_postgres_network: 'postgres'
-lidarr_postgres_network_driver: 'bridge'  ## only required if network doesn't exist
+lidarr_postgres_network_driver: []  ## only required if network doesn't exist
 lidarr_postgres_network_subnet: []  ## only required if network doesn't exist
 
 ################################
