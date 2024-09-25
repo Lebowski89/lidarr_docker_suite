@@ -1,0 +1,284 @@
+---
+
+################################
+# DEPENDENCIES
+################################
+
+- name: Install prerequisite apt packages
+  ansible.builtin.apt:
+    pkg:
+      - python3-requests
+      - python3-psycopg2
+      - python3-lxml
+    update_cache: true
+
+- name: Install collection requirements
+  community.general.ansible_galaxy_install:
+    type: collection
+    requirements_file: '{{ role_path }}/requirements.yml'
+
+################################
+# DOCKER
+################################
+
+- name: Apt install docker if required
+  when: ansible_os_family == 'Debian'
+  block:
+    - name: Gather apt facts
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Include docker install tasks
+      when: '"docker-ce" not in ansible_facts.packages'
+      ansible.builtin.include_tasks: 'sub_tasks/docker.yml'
+
+################################
+# CLEAN UP
+################################
+
+- name: Register lidarr container
+  community.docker.docker_container_info:
+    name: '{{ lidarr_basics_name }}'
+  register: lidarr_existing_container_result
+
+- name: Remove existing lidarr container
+  when: lidarr_existing_container_result.exists
+  community.docker.docker_container:
+    container_default_behavior: compatibility
+    name: '{{ lidarr_basics_name }}'
+    state: absent
+    stop_timeout: 10
+  register: remove_lidarr_docker
+  retries: 5
+  delay: 10
+  until: remove_lidarr_docker is succeeded
+
+################################
+# BACKEND NETWORK
+################################
+
+- name: Conduct backend network tasks
+  when: lidarr_network_backend_is_enabled
+  block:
+    - name: Register lidarr backend network
+      community.docker.docker_network_info:
+        name: '{{ lidarr_network_backend }}'
+      register: lidarr_net_backend_result
+
+    - name: Lidarr network backend builtin fail
+      ansible.builtin.fail:
+        msg: lidarr backend network does not exist nor is it enabled. Ensure the lidarr backend network variables contain valid entries.
+      when:
+        - not lidarr_net_backend_result.exists
+        - not lidarr_network_backend_is_enabled
+
+    - name: Create lidarr backend network
+      when:
+        - not lidarr_net_backend_result.exists
+        - lidarr_network_backend_is_enabled
+      community.docker.docker_network:
+        name: '{{ lidarr_network_backend }}'
+        driver: '{{ lidarr_network_backend_driver }}'
+        ipam_config:
+          - subnet: '{{ lidarr_network_backend_subnet }}'
+
+################################
+# APPDATA
+################################
+
+- name: Create lidarr appdata directory
+  ansible.builtin.file:
+    path: '{{ lidarr_paths_location }}'
+    state: directory
+    owner: '{{ lidarr_env_puid }}'
+    group: '{{ lidarr_env_pgid }}'
+    mode: '0755'
+
+################################
+# CONFIG
+################################
+
+- name: Check if lidarr config.xml exists
+  ansible.builtin.stat:
+    path: '{{ lidarr_paths_location }}/config.xml'
+  register: lidarr_config_xml
+
+- name: Create lidarr config.xml file
+  when: not lidarr_config_xml.stat.exists
+  block:
+    - name: Import config file
+      ansible.builtin.template:
+        src: '{{ role_path }}/templates/config.xml.j2'
+        dest: '{{ lidarr_paths_location }}/config.xml'
+        force: true
+        owner: '{{ lidarr_env_puid }}'
+        group: '{{ lidarr_env_pgid }}'
+        mode: '0664'
+
+    - name: Wait for 'config.xml' to be created
+      ansible.builtin.wait_for:
+        path: '{{ lidarr_paths_location }}/config.xml'
+        state: present
+
+    - name: Lidarr config.xml | Lookup Apikey value
+      when: lidarr_api_key_is_enabled
+      community.general.xml:
+        path: '{{ lidarr_paths_location }}/config.xml'
+        xpath: "/Config/ApiKey"
+        content: "text"
+      register: xml_lidarr_api
+
+    - name: Lidarr config.xml | insert existing api key
+      when:
+        - lidarr_api_key_is_enabled
+        - ((xml_lidarr_api.matches[0].ApiKey is defined) and (xml_lidarr_api.matches[0].ApiKey != lidarr_api_key))
+      community.general.xml:
+        path: '{{ lidarr_paths_location }}/config.xml'
+        xpath: '/Config/ApiKey'
+        value: '{{ lidarr_api_key }}'
+
+    - name: Lidarr config.xml | Lookup AuthenticationMethod value
+      when: lidarr_authelia_is_enabled
+      community.general.xml:
+        path: '{{ lidarr_paths_location }}/config.xml'
+        xpath: "/Config/AuthenticationMethod"
+        content: "text"
+      register: xml_lidarr_external
+
+    - name: Register authelia container
+      when: lidarr_authelia_is_enabled
+      community.docker.docker_container_info:
+        name: '{{ lidarr_authelia_name }}'
+      register: lidarr_authelia_container_result
+
+    - name: Lidarr config.xml | change auth method to external  ## prevents double login when using authelia
+      when:
+        - lidarr_authelia_is_enabled
+        - lidarr_authelia_container_result.exists
+        - ((xml_lidarr_external.matches[0].AuthenticationMethod is defined) and (xml_lidarr_external.matches[0].AuthenticationMethod != 'External'))
+      community.general.xml:
+        path: '{{ lidarr_paths_location }}/config.xml'
+        xpath: '/Config/AuthenticationMethod'
+        value: 'External'
+
+################################
+# POSTGRES
+################################
+
+- name: Include postgres container tasks
+  when: lidarr_postgres_is_enabled
+  ansible.builtin.include_tasks: 'postgres/postgres_container.yml'
+
+- name: Include postgres database tasks
+  when: lidarr_postgres_is_enabled
+  ansible.builtin.include_tasks: 'postgres/postgres_database.yml'
+
+- name: Include postgres lidarr config.xml tasks
+  when: lidarr_postgres_is_enabled
+  ansible.builtin.include_tasks: 'postgres/postgres_config_xml.yml'
+
+################################
+# TRAEFIK
+################################
+
+- name: Conduct traefik tasks
+  when: lidarr_traefik_is_enabled
+  block:
+    - name: Register traefik network
+      community.docker.docker_network_info:
+        name: '{{ lidarr_traefik_network }}'
+      register: lidarr_traefik_network_result
+
+    - name: Traefik builtin fail
+      when:
+        - not lidarr_traefik_network_is_enabled
+        - not lidarr_traefik_network_result.exists
+      ansible.builtin.fail:
+        msg: Traefik network does not exist nor is it enabled. Ensure the Traefik network variables contain valid entries.
+
+    - name: Create traefik network
+      when: not lidarr_traefik_network_result.exists
+      community.docker.docker_network:
+        name: '{{ lidarr_traefik_network }}'
+        driver: '{{ lidarr_traefik_network_driver }}'
+        ipam_config:
+          - subnet: '{{ lidarr_traefik_network_subnet }}'
+
+################################
+# CLOUDFLARE
+################################
+
+- name: Include cloudflare tasks
+  when: lidarr_cloudflare_is_enabled
+  ansible.builtin.include_tasks: 'sub_tasks/cloudflare.yml'
+
+################################
+# NFS
+################################
+
+- name: Include nfs tasks
+  ansible.builtin.include_tasks: 'sub_tasks/nfs.yml'
+
+################################
+# RCLONE
+################################
+
+- name: Include rclone tasks
+  when: lidarr_rclone_qbittorrent_is_enabled
+  ansible.builtin.include_tasks: 'sub_tasks/rclone.yml'
+
+################################
+# METRICS
+################################
+
+- name: Include prometheus container tasks
+  when: lidarr_prometheus_is_enabled
+  ansible.builtin.include_tasks: 'prometheus/prometheus_container.yml'
+
+- name: Include prometheus exporter tasks
+  when:
+    - lidarr_prometheus_is_enabled
+    - lidarr_prometheus_exporter_is_enabled
+  ansible.builtin.include_tasks: 'prometheus/prometheus_exporter.yml'
+
+- name: Include prometheus cloudflare tasks
+  when: lidarr_prometheus_is_enabled
+  ansible.builtin.include_tasks: 'prometheus/prometheus_cloudflare.yml'
+
+################################
+# CONTAINER
+################################
+
+- name: Create lidarr container
+  when: not lidarr_traefik_is_enabled
+  community.docker.docker_container:
+    name: '{{ lidarr_basics_name }}'
+    image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
+    networks: '{{ lidarr_docker_networks }}'
+    env:
+      PUID: '{{ lidarr_env_puid }}'
+      PGID: '{{ lidarr_env_pgid }}'
+      TZ: '{{ lidarr_env_timezone }}'
+    ports:
+      - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
+    volumes: '{{ lidarr_docker_volumes }}'
+#    healthcheck:
+    restart_policy: '{{ lidarr_basics_restart_policy }}'
+
+- name: Create lidarr traefik container
+  when: lidarr_traefik_is_enabled
+  community.docker.docker_container:
+    name: '{{ lidarr_basics_name }}'
+    image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
+    networks: '{{ lidarr_docker_networks }}'
+    env:
+      PUID: '{{ lidarr_env_puid }}'
+      PGID: '{{ lidarr_env_pgid }}'
+      TZ: '{{ lidarr_env_timezone }}'
+    labels: '{{ lidarr_traefik_labels }}'
+    ports:
+      - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
+    volumes: '{{ lidarr_docker_volumes }}'
+#    healthcheck:
+    restart_policy: '{{ lidarr_basics_restart_policy }}'
+

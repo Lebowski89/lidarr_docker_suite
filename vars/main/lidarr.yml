@@ -1,0 +1,153 @@
+---
+
+################################
+# API
+################################
+
+lidarr_api_key_is_enabled: '{{ (lidarr_api_key is defined) and
+                               (lidarr_api_key is not none) and
+                               (lidarr_api_key | trim | length > 0) }}'
+
+################################
+# NETWORK
+################################
+
+lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend is defined) and
+                                       (lidarr_network_backend is not none) and
+                                       (lidarr_network_backend | trim | length > 0) and
+                                       (lidarr_network_backend_driver is defined) and
+                                       (lidarr_network_backend_driver is not none) and
+                                       (lidarr_network_backend_driver | trim | length > 0) and
+                                       (lidarr_network_backend_subnet is defined) and
+                                       (lidarr_network_backend_subnet is not none) and
+                                       (lidarr_network_backend_subnet | trim | length > 0) }}'
+
+lidarr_network_default_bind:
+  - name: '{{ lidarr_network_backend }}'
+lidarr_network_postgres_bind:
+  - name: '{{ lidarr_postgres_network }}'
+lidarr_network_traefik_bind:
+  - name: '{{ lidarr_traefik_network }}'
+lidarr_network_prometheus_bind:
+  - name: '{{lidarr_prometheus_network }}'
+
+lidarr_docker_networks: '{{ lidarr_network_default_bind
+                            + (lidarr_network_postgres_bind
+                               if lidarr_postgres_is_enabled
+                               else [])
+                            + (lidarr_network_traefik_bind
+                               if lidarr_traefik_is_enabled
+                               else [])
+                            + (lidarr_network_prometheus_bind
+                               if lidarr_prometheus_is_enabled
+                               else []) }}'
+
+################################
+# BINDS
+################################
+
+lidarr_docker_volumes: '{{ lidarr_volumes_binds_default
+                           + (lidarr_nfs_media_bind
+                              if lidarr_nfs_media_volume_result.exists
+                              else [])
+                           + (lidarr_rclone_qbittorrent_bind
+                              if lidarr_rclone_qbittorrent_volume_result.exists
+                              else []) }}'
+
+################################
+# AUTHELIA
+################################
+
+lidarr_authelia_is_enabled: '{{ (lidarr_authelia_name is defined) and
+                                (lidarr_authelia_name is not none) and
+                                (lidarr_authelia_name | trim | length > 0) }}'
+
+################################
+# TRAEFIK
+################################
+
+lidarr_traefik_is_enabled: '{{ (lidarr_traefik_network is defined) and
+                               (lidarr_traefik_network is not none) and
+                               (lidarr_traefik_network | trim | length > 0) and
+                               (lidarr_traefik_subdomain is defined) and
+                               (lidarr_traefik_subdomain is not none) and
+                               (lidarr_traefik_subdomain | trim | length > 0) and
+                               (lidarr_traefik_domain is defined) and
+                               (lidarr_traefik_domain is not none) and
+                               (lidarr_traefik_domain | trim | length > 0) and
+                               (lidarr_traefik_port is defined) and
+                               (lidarr_traefik_port is not none) and
+                               (lidarr_traefik_port | trim | length > 0) and
+                               (lidarr_traefik_themepark_theme is defined) and
+                               (lidarr_traefik_themepark_theme is not none) and
+                               (lidarr_traefik_themepark_theme | trim | length > 0) }}'
+
+lidarr_traefik_network_is_enabled: '{{ (lidarr_traefik_network is defined) and
+                                       (lidarr_traefik_network is not none) and
+                                       (lidarr_traefik_network | trim | length > 0) and
+                                       (lidarr_traefik_network_driver is defined) and
+                                       (lidarr_traefik_network_driver is not none) and
+                                       (lidarr_traefik_network_driver | trim | length > 0) and
+                                       (lidarr_traefik_network_subnet is defined) and
+                                       (lidarr_traefik_network_subnet is not none) and
+                                       (lidarr_traefik_network_subnet | trim | length > 0) }}'
+
+lidarr_traefik_labels_default:
+  traefik.enable: 'true'
+  traefik.docker.network: '{{ lidarr_traefik_network }}'
+
+lidarr_traefik_labels_router:
+  traefik.http.routers.lidarr-rtr.entrypoints: 'http'
+  traefik.http.routers.lidarr-rtr.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
+  traefik.http.routers.lidarr-rtr.middlewares: 'globalHeaders@file,robotHeaders@file,authelia@docker'
+  traefik.http.routers.lidarr-rtr.priority: '20'
+  traefik.http.routers.lidarr-rtr.service: 'lidarr-rtr-svc'
+  traefik.http.services.lidarr-rtr-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
+  traefik.http.routers.lidarr-api-rtr.entrypoints: 'http'
+  traefik.http.routers.lidarr-api-rtr.middlewares: 'globalHeaders@file,robotHeaders@file'
+  traefik.http.routers.lidarr-api-rtr.priority: '30'
+  traefik.http.routers.lidarr-api-rtr.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`) && (PathPrefix(`/api/websocket/`))'
+  traefik.http.routers.lidarr-api-rtr.service: 'lidarr-rtr-svc'
+
+lidarr_traefik_labels_router_secure:
+  traefik.http.routers.lidarr-rtr-secure.entrypoints: 'https'
+  traefik.http.routers.lidarr-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
+  traefik.http.routers.lidarr-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,authelia@docker'
+  traefik.http.routers.lidarr-rtr-secure.priority: '20'
+  traefik.http.routers.lidarr-rtr-secure.service: 'lidarr-rtr-secure-svc'
+  traefik.http.routers.lidarr-rtr-secure.tls.certresolver: 'dns-cloudflare'
+  traefik.http.routers.lidarr-rtr-secure.tls.options: 'tls-opts@file'
+  traefik.http.services.lidarr-rtr-secure-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
+  traefik.http.routers.lidarr-api-rtr-secure.entrypoints: 'https'
+  traefik.http.routers.lidarr-api-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file'
+  traefik.http.routers.lidarr-api-rtr-secure.priority: '30'
+  traefik.http.routers.lidarr-api-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`) && (PathPrefix(`/api/websocket/`))'
+  traefik.http.routers.lidarr-api-rtr-secure.service: 'lidarr-rtr-secure-svc'
+  traefik.http.routers.lidarr-api-rtr-secure.tls.certresolver: 'dns-cloudflare'
+  traefik.http.routers.lidarr-api-rtr-secure.tls.options: 'tls-opts@file'
+
+lidarr_traefik_labels_themepark:
+  traefik.http.middlewares.themepark-portainer.plugin.themepark.app: '{{ lidarr_basics_name }}'
+  traefik.http.middlewares.themepark-portainer.plugin.themepark.theme: '{{ lidarr_traefik_themepark_theme }}'
+
+lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
+                           | combine(lidarr_traefik_labels_router)
+                           | combine(lidarr_traefik_labels_router_secure)
+                           | combine(lidarr_traefik_labels_themepark) }}'
+
+################################
+# CLOUDFLARE
+################################
+
+lidarr_cloudflare_record: '{{ lidarr_traefik_subdomain }}'
+lidarr_cloudflare_zone: '{{ lidarr_traefik_domain }}'
+
+lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_record_type is defined) and
+                                  (lidarr_cloudflare_record_type is not none) and
+                                  (lidarr_cloudflare_record_type | trim | length > 0) and
+                                  (lidarr_cloudflare_proxy is defined) and
+                                  (lidarr_cloudflare_proxy is not none) and
+                                  (lidarr_cloudflare_proxy | trim | length > 0) and
+                                  (lidarr_cloudflare_api_token is defined) and
+                                  (lidarr_cloudflare_api_token is not none) and
+                                  (lidarr_cloudflare_api_token | trim | length > 0) }}'

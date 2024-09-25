@@ -1,0 +1,78 @@
+---
+
+################################
+# BASICS
+################################
+
+lidarr_postgres_basics_host: []  # machine address for ansible postgres module to ping database
+lidarr_postgres_basics_name: 'postgres'
+lidarr_postgres_basics_image_repo: 'postgres'
+lidarr_postgres_basics_image_tag: '14'
+lidarr_postgres_basics_restart_policy: 'unless-stopped'
+
+################################
+# NETWORK
+################################
+
+lidarr_postgres_network: 'postgres'
+lidarr_postgres_network_driver: 'bridge'  ## only required if network doesn't exist
+lidarr_postgres_network_subnet: []  ## only required if network doesn't exist
+
+################################
+# ENV
+################################
+
+lidarr_postgres_env_timezone: []
+lidarr_postgres_env_puid: []
+lidarr_postgres_env_pgid: []
+
+################################
+# PORTS
+################################
+
+lidarr_postgres_ports_host: '5432'
+lidarr_postgres_ports_cont: '5432'
+
+################################
+# PATHS
+################################
+
+lidarr_postgres_paths_folder: '{{ lidarr_postgres_basics_name }}'  # name of postgres folder
+lidarr_postgres_paths_location: '/opt/{{ lidarr_postgres_paths_folder }}' # path of postgres folder
+lidarr_postgres_paths_keys_folder: 'keys'
+lidarr_postgres_paths_keys_location: '{{ lidarr_postgres_paths_location }}/{{ lidarr_postgres_paths_keys_folder }}'
+
+################################
+# BINDS
+################################
+
+lidarr_postgres_binds_config_mapping:
+  - '{{ lidarr_postgres_paths_location }}:/var/lib/postgresql/data'
+
+lidarr_postgres_binds_keys_mapping:
+  - '{{ lidarr_postgres_paths_keys_location }}:/keys'
+
+################################
+# AUTH
+################################
+
+lidarr_postgres_auth_user: []
+lidarr_postgres_auth_password: []
+lidarr_postgres_auth_password_file: 'postgres_key.txt'
+
+################################
+# DATABASE
+################################
+
+lidarr_postgres_database_main: 'lidarr-main'
+lidarr_postgres_database_log: 'lidarr-log' 
+
+################################
+# CLEAN
+################################
+
+  ## warning: the below toggles will delete any existing sqlite database files in the lidarr appdir.
+  ## toggle false if you're planning to migrate db data. See: https://wiki.servarr.com/lidarr/postgres-setup
+
+lidarr_postgres_clean_files: true  # true will delete any existing sqlite database files in the lidarr appdir.
+lidarr_postgres_clean_folders: true  # true will delete sqlite backups folder in the lidarr appdir.

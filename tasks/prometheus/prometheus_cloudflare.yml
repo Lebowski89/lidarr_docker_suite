@@ -1,0 +1,45 @@
+---
+
+- name: Add Prometheus DNS record
+  when: lidarr_prometheus_cloudflare_is_enabled
+  block:
+    - name: Remove existing CNAME DNS record
+      community.general.cloudflare_dns:
+        api_token: '{{ lidarr_prometheus_cloudflare_api_token }}'
+        zone: '{{ lidarr_prometheus_cloudflare_zone }}'
+        state: absent
+        type: CNAME
+        record: '{{ lidarr_prometheus_cloudflare_record }}'
+
+    - name: Remove existing A DNS record
+      community.general.cloudflare_dns:
+        api_token: '{{ lidarr_prometheus_cloudflare_api_token }}'
+        zone: '{{ lidarr_prometheus_cloudflare_zone }}'
+        state: absent
+        type: A
+        record: '{{ lidarr_prometheus_cloudflare_record }}'
+
+    - name: Add lidarr DNS record
+      community.general.cloudflare_dns:
+        api_token: '{{ lidarr_prometheus_cloudflare_api_token }}'
+        zone: '{{ lidarr_prometheus_cloudflare_zone }}'
+        state: present
+        solo: true
+        proxied: '{{ lidarr_prometheus_cloudflare_proxy }}'
+        type: '{{ lidarr_prometheus_cloudflare_record_type }}'
+        value: '{{ ipify_public_ip }}'
+        record: '{{ lidarr_prometheus_cloudflare_record }}'
+      register: lidarr_prometheus_cloudflare_record_creation_status
+
+- name: Tasks on authelia DNS record success
+  when:
+    - lidarr_prometheus_cloudflare_is_enabled
+    - lidarr_prometheus_cloudflare_record_creation_status is succeeded
+  block:
+    - name: Set 'dns_record_print' variable
+      ansible.builtin.set_fact:
+        lidarr_prometheus_cloudflare_record_print: '{{ (lidarr_prometheus_cloudflare_record == lidarr_prometheus_cloudflare_zone) | ternary(lidarr_prometheus_cloudflare_zone, lidarr_prometheus_cloudflare_record + "." + lidarr_prometheus_cloudflare_zone) }}'
+
+    - name: Display DNS record creation status
+      ansible.builtin.debug:
+        msg: 'DNS A Record for "{{ lidarr_prometheus_cloudflare_record_print }}" set to "{{ ipify_public_ip }}" was added. Proxy: {{ lidarr_prometheus_cloudflare_proxy }}'
