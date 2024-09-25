@@ -8,5 +8,5 @@ Lidarr Suite
       - Includes the option of creating a Cloudflare DNS record for your Lidarr instance for reverse proxy purposes.
       - Includes the option of setting up Autofs NFS (to provide media access on the host system) and Docker NFS volumes (to attach to the Lidarr container).
       - Includes the option of setting up the Rclone Docker plugin and the creation of Rclone Docker volumes (to attach to the Lidarr container).
-      - Includes the option of joining an existing Traefik docker network (or creating one if none exists).
-      - Includes the option of editing Lidarr's config.xml to include an existing Lidarr API - allowing API to be maintained even when recreating the config.xml
+      - Includes the option of joining Lidarr to an existing Traefik docker network (or creating one if none exists).
+      - Includes the option of editing Lidarr's config.xml to include an existing Lidarr API - maintaining connections to other applications that rely on it.
