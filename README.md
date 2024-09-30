@@ -10,3 +10,5 @@ Lidarr Suite
       - Includes the option of setting up the Rclone Docker plugin and the creation of Rclone Docker volumes (to attach to the Lidarr container).
       - Includes the option of joining Lidarr to an existing Traefik docker network (or creating one if none exists).
       - Includes the option of editing Lidarr's config.xml to include an existing Lidarr API - maintaining connections to other applications that rely on it.
+
+(Proper documentation is coming...)
