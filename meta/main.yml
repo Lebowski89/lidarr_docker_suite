@@ -11,7 +11,12 @@ galaxy_info:
 
   galaxy_tags:
     - lidarr
+    - docker
     - servarr
+    - prometheus
+    - metrics
+    - cloudflare
+    - traefik
     - pvr
     - music
     - media
