@@ -29,7 +29,7 @@ lidarr_network_postgres_bind:
 lidarr_network_traefik_bind:
   - name: '{{ lidarr_traefik_network }}'
 lidarr_network_prometheus_bind:
-  - name: '{{lidarr_prometheus_network }}'
+  - name: '{{ lidarr_prometheus_network }}'
 
 lidarr_docker_networks: '{{ lidarr_network_default_bind
                             + (lidarr_network_postgres_bind

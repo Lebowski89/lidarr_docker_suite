@@ -281,4 +281,3 @@
     volumes: '{{ lidarr_docker_volumes }}'
 #    healthcheck:
     restart_policy: '{{ lidarr_basics_restart_policy }}'
-

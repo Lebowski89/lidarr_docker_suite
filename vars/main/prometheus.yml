@@ -79,7 +79,7 @@ lidarr_prometheus_network_default_bind:
 lidarr_prometheus_network_traefik_bind:
   - name: '{{ lidarr_prometheus_traefik_network }}'
 lidarr_prometheus_network_bind:
-  - name: '{{lidarr_prometheus_network }}'
+  - name: '{{ lidarr_prometheus_network }}'
 
 lidarr_prometheus_docker_networks: '{{ lidarr_prometheus_network_default_bind
                                        + (lidarr_prometheus_network_traefik_bind
@@ -191,7 +191,7 @@ lidarr_prometheus_exporter_is_enabled: '{{ (lidarr_prometheus_exporter_name is d
 lidarr_prometheus_exporter_network_default_bind:
   - name: '{{ lidarr_network_backend }}'
 lidarr_prometheus_exporter_network_bind:
-  - name: '{{lidarr_prometheus_network }}'
+  - name: '{{ lidarr_prometheus_network }}'
 
 lidarr_prometheus_exporter_networks: '{{ lidarr_prometheus_exporter_network_default_bind
                                          + (lidarr_prometheus_exporter_network_bind
