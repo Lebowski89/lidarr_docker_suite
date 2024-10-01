@@ -4,7 +4,7 @@
 # BASICS
 ################################
 
-lidarr_postgres_basics_host: []  # machine address for ansible postgres module to ping database
+lidarr_postgres_basics_host: ''  # machine address for ansible postgres module to ping database
 lidarr_postgres_basics_name: 'postgres'
 lidarr_postgres_basics_image_repo: 'postgres'
 lidarr_postgres_basics_image_tag: '14'
@@ -15,16 +15,16 @@ lidarr_postgres_basics_restart_policy: 'unless-stopped'
 ################################
 
 lidarr_postgres_network: 'postgres'
-lidarr_postgres_network_driver: []  ## only required if network doesn't exist
-lidarr_postgres_network_subnet: []  ## only required if network doesn't exist
+lidarr_postgres_network_driver: ''  ## only required if network doesn't exist
+lidarr_postgres_network_subnet: ''  ## only required if network doesn't exist
 
 ################################
 # ENV
 ################################
 
-lidarr_postgres_env_timezone: []
-lidarr_postgres_env_puid: []
-lidarr_postgres_env_pgid: []
+lidarr_postgres_env_timezone: ''
+lidarr_postgres_env_puid: ''
+lidarr_postgres_env_pgid: ''
 
 ################################
 # PORTS
@@ -56,8 +56,8 @@ lidarr_postgres_binds_keys_mapping:
 # AUTH
 ################################
 
-lidarr_postgres_auth_user: []
-lidarr_postgres_auth_password: []
+lidarr_postgres_auth_user: ''
+lidarr_postgres_auth_password: ''
 lidarr_postgres_auth_password_file: 'postgres_key.txt'
 
 ################################

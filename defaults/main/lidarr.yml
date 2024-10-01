@@ -4,7 +4,7 @@
 # API
 ################################
 
-lidarr_api_key: []
+lidarr_api_key: ''
 
 ################################
 # BASICS
@@ -20,16 +20,16 @@ lidarr_basics_restart_policy: 'unless-stopped'
 ################################
 
 lidarr_network_backend: 'proxy'  ## allows backend docker communication between lidarr and companion apps, such as recyclarr
-lidarr_network_backend_driver: []  ## only required if network doesn't exist
-lidarr_network_backend_subnet: []  ## only required if network doesn't exist
+lidarr_network_backend_driver: ''  ## only required if network doesn't exist
+lidarr_network_backend_subnet: ''  ## only required if network doesn't exist
 
 ################################
 # ENV
 ################################
 
-lidarr_env_timezone: []
-lidarr_env_puid: []
-lidarr_env_pgid: []
+lidarr_env_timezone: ''
+lidarr_env_puid: ''
+lidarr_env_pgid: ''
 
 ################################
 # PORTS
@@ -64,14 +64,14 @@ lidarr_authelia_name: 'authelia'
 ################################
 
 lidarr_traefik_subdomain: '{{ lidarr_basics_name }}'
-lidarr_traefik_domain: []
+lidarr_traefik_domain: ''
 lidarr_traefik_port: '8686'
 lidarr_traefik_themepark_theme: 'hotline'  ## See https://github.com/themepark-dev/theme.park
 
   ## traefik docker network
 lidarr_traefik_network: 'traefik_proxy'
-lidarr_traefik_network_driver: []  ## only required if network doesn't exist
-lidarr_traefik_network_subnet: []  ## only required if network doesn't exist
+lidarr_traefik_network_driver: ''  ## only required if network doesn't exist
+lidarr_traefik_network_subnet: ''  ## only required if network doesn't exist
 
 ################################
 # CLOUDFLARE
@@ -79,4 +79,4 @@ lidarr_traefik_network_subnet: []  ## only required if network doesn't exist
 
 lidarr_cloudflare_record_type: 'A'  ## A (IPV4), AAAA (IPV6), CNAME, etc
 lidarr_cloudflare_proxy: 'true'  ## true for cloudflare DNS SSL
-lidarr_cloudflare_api_token: []
+lidarr_cloudflare_api_token: ''

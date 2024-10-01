@@ -4,17 +4,17 @@
 # ENV
 ################################
 
-lidarr_nfs_env_timezone: []
-lidarr_nfs_env_puid: []
-lidarr_nfs_env_pgid: []
+lidarr_nfs_env_timezone: ''
+lidarr_nfs_env_puid: ''
+lidarr_nfs_env_pgid: ''
 
 ################################
 # AUTOFS
 ################################
 
-lidarr_autofs_media_mount_host_address: []
-lidarr_autofs_media_mount_remote_path: []
-lidarr_autofs_media_mount_local_dir_name: []
+lidarr_autofs_media_mount_host_address: ''
+lidarr_autofs_media_mount_remote_path: ''
+lidarr_autofs_media_mount_local_dir_name: ''
 lidarr_autofs_media_mount_opt: '-fstype=nfs,port=2049,rw,timeo=100,noatime'
 
   ## autofs to mount the nfs media remote on the host
@@ -25,9 +25,9 @@ lidarr_autofs_media_mount_opt: '-fstype=nfs,port=2049,rw,timeo=100,noatime'
 
   ## media remote
 
-lidarr_nfs_media_name: []
-lidarr_nfs_media_address: []
-lidarr_nfs_media_device: []
+lidarr_nfs_media_name: ''
+lidarr_nfs_media_address: ''
+lidarr_nfs_media_device: ''
 lidarr_nfs_media_permissions: 'rw'
 lidarr_nfs_media_version: '4'
 

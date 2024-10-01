@@ -14,16 +14,16 @@ lidarr_prometheus_basics_restart_policy: 'unless-stopped'
 ################################
 
 lidarr_prometheus_network: 'prometheus'
-lidarr_prometheus_network_driver: []
-lidarr_prometheus_network_subnet: []
+lidarr_prometheus_network_driver: ''
+lidarr_prometheus_network_subnet: ''
 
 ################################
 # ENV
 ################################
 
-lidarr_prometheus_env_timezone: []
-lidarr_prometheus_env_puid: []
-lidarr_prometheus_env_pgid: []
+lidarr_prometheus_env_timezone: ''
+lidarr_prometheus_env_puid: ''
+lidarr_prometheus_env_pgid: ''
 
 ################################
 # PORTS
@@ -56,7 +56,7 @@ lidarr_prometheus_binds_data_mapping:
 ################################
   
 lidarr_prometheus_traefik_subdomain: '{{ lidarr_prometheus_basics_name }}'
-lidarr_prometheus_traefik_domain: []
+lidarr_prometheus_traefik_domain: ''
 lidarr_prometheus_traefik_network: 'traefik_proxy'
 lidarr_prometheus_traefik_port: '9090'
 
@@ -66,7 +66,7 @@ lidarr_prometheus_traefik_port: '9090'
 
 lidarr_prometheus_cloudflare_record_type: 'A'  ## A (IPV4), AAAA (IPV6), CNAME, etc
 lidarr_prometheus_cloudflare_proxy: 'true'  ## true for cloudflare DNS SSL
-lidarr_prometheus_cloudflare_api_token: []
+lidarr_prometheus_cloudflare_api_token: ''
 
 ################################
 # METRICS
@@ -83,9 +83,9 @@ lidarr_prometheus_exporter_name: '{{ lidarr_basics_name }}_exporter'
 lidarr_prometheus_exporter_image_repo: 'ghcr.io/onedr0p/exportarr'
 lidarr_prometheus_exporter_image_tag: 'v2.0.1'
 lidarr_prometheus_exporter_restart_policy: 'unless-stopped'
-lidarr_prometheus_exporter_env_timezone: []
-lidarr_prometheus_exporter_env_puid: []
-lidarr_prometheus_exporter_env_pgid: []
+lidarr_prometheus_exporter_env_timezone: ''
+lidarr_prometheus_exporter_env_puid: ''
+lidarr_prometheus_exporter_env_pgid: ''
 lidarr_prometheus_exporter_host_port: '9709' 
 lidarr_prometheus_exporter_cont_port: '9709'
 
