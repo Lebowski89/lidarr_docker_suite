@@ -55,8 +55,3 @@
           type: nfs
           o: 'addr={{ lidarr_nfs_media_address }},{{ lidarr_nfs_media_permissions }},nfsvers={{ lidarr_nfs_media_version }}'
           device: '{{ lidarr_nfs_media_device }}'
-
-    - name: Register lidarr nfs media volume
-      community.docker.docker_volume_info:
-        name: '{{ lidarr_nfs_media_name }}'
-      register: lidarr_nfs_media_volume_result

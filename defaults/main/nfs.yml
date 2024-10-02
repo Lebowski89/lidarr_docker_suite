@@ -4,7 +4,6 @@
 # ENV
 ################################
 
-lidarr_nfs_env_timezone: ''
 lidarr_nfs_env_puid: ''
 lidarr_nfs_env_pgid: ''
 

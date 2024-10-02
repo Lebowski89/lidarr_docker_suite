@@ -12,16 +12,6 @@ lidarr_api_key_is_enabled: '{{ (lidarr_api_key is defined) and
 # NETWORK
 ################################
 
-lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend is defined) and
-                                       (lidarr_network_backend is not none) and
-                                       (lidarr_network_backend | trim | length > 0) and
-                                       (lidarr_network_backend_driver is defined) and
-                                       (lidarr_network_backend_driver is not none) and
-                                       (lidarr_network_backend_driver | trim | length > 0) and
-                                       (lidarr_network_backend_subnet is defined) and
-                                       (lidarr_network_backend_subnet is not none) and
-                                       (lidarr_network_backend_subnet | trim | length > 0) }}'
-
 lidarr_network_default_bind:
   - name: '{{ lidarr_network_backend }}'
 lidarr_network_postgres_bind:
@@ -42,16 +32,23 @@ lidarr_docker_networks: '{{ lidarr_network_default_bind
                                if lidarr_prometheus_is_enabled
                                else []) }}'
 
+lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend_driver is defined) and
+                                       (lidarr_network_backend_driver is not none) and
+                                       (lidarr_network_backend_driver | trim | length > 0) and
+                                       (lidarr_network_backend_subnet is defined) and
+                                       (lidarr_network_backend_subnet is not none) and
+                                       (lidarr_network_backend_subnet | trim | length > 0) }}'
+
 ################################
 # BINDS
 ################################
 
 lidarr_docker_volumes: '{{ lidarr_volumes_binds_default
                            + (lidarr_nfs_media_bind
-                              if lidarr_nfs_media_volume_result.exists
+                              if lidarr_nfs_media_volume_is_enabled
                               else [])
                            + (lidarr_rclone_qbittorrent_bind
-                              if lidarr_rclone_qbittorrent_volume_result.exists
+                              if lidarr_rclone_qbittorrent_is_enabled
                               else []) }}'
 
 ################################
@@ -65,32 +62,6 @@ lidarr_authelia_is_enabled: '{{ (lidarr_authelia_name is defined) and
 ################################
 # TRAEFIK
 ################################
-
-lidarr_traefik_is_enabled: '{{ (lidarr_traefik_network is defined) and
-                               (lidarr_traefik_network is not none) and
-                               (lidarr_traefik_network | trim | length > 0) and
-                               (lidarr_traefik_subdomain is defined) and
-                               (lidarr_traefik_subdomain is not none) and
-                               (lidarr_traefik_subdomain | trim | length > 0) and
-                               (lidarr_traefik_domain is defined) and
-                               (lidarr_traefik_domain is not none) and
-                               (lidarr_traefik_domain | trim | length > 0) and
-                               (lidarr_traefik_port is defined) and
-                               (lidarr_traefik_port is not none) and
-                               (lidarr_traefik_port | trim | length > 0) and
-                               (lidarr_traefik_themepark_theme is defined) and
-                               (lidarr_traefik_themepark_theme is not none) and
-                               (lidarr_traefik_themepark_theme | trim | length > 0) }}'
-
-lidarr_traefik_network_is_enabled: '{{ (lidarr_traefik_network is defined) and
-                                       (lidarr_traefik_network is not none) and
-                                       (lidarr_traefik_network | trim | length > 0) and
-                                       (lidarr_traefik_network_driver is defined) and
-                                       (lidarr_traefik_network_driver is not none) and
-                                       (lidarr_traefik_network_driver | trim | length > 0) and
-                                       (lidarr_traefik_network_subnet is defined) and
-                                       (lidarr_traefik_network_subnet is not none) and
-                                       (lidarr_traefik_network_subnet | trim | length > 0) }}'
 
 lidarr_traefik_labels_default:
   traefik.enable: 'true'
@@ -135,6 +106,17 @@ lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
                            | combine(lidarr_traefik_labels_router_secure)
                            | combine(lidarr_traefik_labels_themepark) }}'
 
+lidarr_traefik_is_enabled: '{{ (lidarr_traefik_domain is defined) and
+                               (lidarr_traefik_domain is not none) and
+                               (lidarr_traefik_domain | trim | length > 0) }}'
+
+lidarr_traefik_network_is_enabled: '{{ (lidarr_traefik_network_driver is defined) and
+                                       (lidarr_traefik_network_driver is not none) and
+                                       (lidarr_traefik_network_driver | trim | length > 0) and
+                                       (lidarr_traefik_network_subnet is defined) and
+                                       (lidarr_traefik_network_subnet is not none) and
+                                       (lidarr_traefik_network_subnet | trim | length > 0) }}'
+
 ################################
 # CLOUDFLARE
 ################################
@@ -142,12 +124,6 @@ lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
 lidarr_cloudflare_record: '{{ lidarr_traefik_subdomain }}'
 lidarr_cloudflare_zone: '{{ lidarr_traefik_domain }}'
 
-lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_record_type is defined) and
-                                  (lidarr_cloudflare_record_type is not none) and
-                                  (lidarr_cloudflare_record_type | trim | length > 0) and
-                                  (lidarr_cloudflare_proxy is defined) and
-                                  (lidarr_cloudflare_proxy is not none) and
-                                  (lidarr_cloudflare_proxy | trim | length > 0) and
-                                  (lidarr_cloudflare_api_token is defined) and
+lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_api_token is defined) and
                                   (lidarr_cloudflare_api_token is not none) and
                                   (lidarr_cloudflare_api_token | trim | length > 0) }}'
