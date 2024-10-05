@@ -1,7 +1,7 @@
 Lidarr Suite
 =========
 
-    Ansible role to automate the full set-up of Lidarr - a music collection manager for Usenet and BitTorrent users.
+    Standalone Ansible role to automate the full set-up of Lidarr - a music collection manager for Usenet and BitTorrent users.
       - Includes the installation of Docker (Debian-based distros) and Ansible dependencies within the role.
       - Includes the option of setting up and connecting Lidarr to a Postgres database.
       - Includes the option of setting up Prometheus and a Lidarr Promtheus exporter to gather various metrics about your Lidarr usage and music collection.
