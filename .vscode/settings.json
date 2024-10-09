@@ -1,0 +1,6 @@
+{
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/ansible.json#/$defs/tasks": "file:///ansible/ansible_galaxy/lidarr_suite/tasks/prometheus/prometheus_container.yml",
+        "https://raw.githubusercontent.com/ansible/ansible-lint/main/src/ansiblelint/schemas/vars.json": "file:///ansible/ansible_galaxy/lidarr_suite/vars/main/prometheus.yml"
+    }
+}

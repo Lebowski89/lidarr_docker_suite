@@ -22,7 +22,7 @@
       ansible.builtin.lineinfile:
         dest: '{{ lidarr_autofs_auto_mast_file }}'
         line: '{{ lidarr_autofs_nfs_local_path }} {{ lidarr_autofs_nfsdb_file }} --timeout=0 --browse'
-        state: 'present'
+        state: present
         create: true
         owner: '{{ lidarr_nfs_env_puid }}'
         group: '{{ lidarr_nfs_env_pgid }}'
@@ -34,7 +34,7 @@
       ansible.builtin.lineinfile:
         dest: '{{ lidarr_autofs_nfsdb_file }}'
         line: '{{ lidarr_autofs_media_mount_local_dir_name }} {{ lidarr_autofs_media_mount_opt }} {{ lidarr_autofs_media_mount_host_address }}:{{ lidarr_autofs_media_mount_remote_path }}'
-        state: 'present'
+        state: present
         create: true
         owner: '{{ lidarr_nfs_env_puid }}'
         group: '{{ lidarr_nfs_env_pgid }}'
