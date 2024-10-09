@@ -87,4 +87,7 @@ lidarr_cloudflare_api_token: ''
 # THEME
 ################################
 
-lidarr_theme: 'hotline'  ## See https://github.com/themepark-dev/theme.park
+  ## See https://github.com/themepark-dev/theme.park
+
+lidarr_theme_local: 'hotline'  ## theme to use for local theme-park deployment
+lidarr_theme_traefik: 'hotpink'  ## theme to use for traefik theme-park plugin middleware

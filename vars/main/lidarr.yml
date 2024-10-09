@@ -52,7 +52,7 @@ lidarr_env_themepark_local:
   TP_SCHEME: 'http'
   TP_DOMAIN: '{{ lidarr_themepark_domain_local }}'
   TP_HOTIO: 'true'
-  TP_THEME: '{{ lidarr_theme }}'
+  TP_THEME: '{{ lidarr_theme_local }}'
 
 lidarr_docker_envs: '{{ lidarr_env_default
                         | combine((lidarr_env_themepark_local
@@ -93,7 +93,7 @@ lidarr_traefik_labels_default:
 lidarr_traefik_labels_router:
   traefik.http.routers.lidarr-rtr.entrypoints: 'http'
   traefik.http.routers.lidarr-rtr.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
-  traefik.http.routers.lidarr-rtr.middlewares: 'globalHeaders@file,robotHeaders@file,authelia@docker'
+  traefik.http.routers.lidarr-rtr.middlewares: 'globalHeaders@file,robotHeaders@file,authelia@docker,cloudflarewarp@docker'
   traefik.http.routers.lidarr-rtr.priority: '20'
   traefik.http.routers.lidarr-rtr.service: 'lidarr-rtr-svc'
   traefik.http.services.lidarr-rtr-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
@@ -106,14 +106,14 @@ lidarr_traefik_labels_router:
 lidarr_traefik_labels_router_secure:
   traefik.http.routers.lidarr-rtr-secure.entrypoints: 'https'
   traefik.http.routers.lidarr-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
-  traefik.http.routers.lidarr-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,authelia@docker'
+  traefik.http.routers.lidarr-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,authelia@docker,cloudflarewarp@docker,themepark-lidarr'
   traefik.http.routers.lidarr-rtr-secure.priority: '20'
   traefik.http.routers.lidarr-rtr-secure.service: 'lidarr-rtr-secure-svc'
   traefik.http.routers.lidarr-rtr-secure.tls.certresolver: 'dns-cloudflare'
   traefik.http.routers.lidarr-rtr-secure.tls.options: 'tls-opts@file'
   traefik.http.services.lidarr-rtr-secure-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
   traefik.http.routers.lidarr-api-rtr-secure.entrypoints: 'https'
-  traefik.http.routers.lidarr-api-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file'
+  traefik.http.routers.lidarr-api-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,cloudflarewarp@docker'
   traefik.http.routers.lidarr-api-rtr-secure.priority: '30'
   traefik.http.routers.lidarr-api-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`) && (PathPrefix(`/api`) || PathPrefix(`/feed`) || PathPrefix(`/ping`))'
   traefik.http.routers.lidarr-api-rtr-secure.service: 'lidarr-rtr-secure-svc'
@@ -122,7 +122,7 @@ lidarr_traefik_labels_router_secure:
 
 lidarr_traefik_labels_themepark:
   traefik.http.middlewares.themepark-lidarr.plugin.themepark.app: 'lidarr'
-  traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_theme }}'
+  traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_theme_traefik }}'
 
 lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
                            | combine(lidarr_traefik_labels_router)
