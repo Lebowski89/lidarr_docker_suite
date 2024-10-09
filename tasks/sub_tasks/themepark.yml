@@ -1,0 +1,31 @@
+---
+
+################################
+# APPDATA
+################################
+
+- name: Create themepark appdata directory
+  ansible.builtin.file:
+    path: '{{ lidarr_themepark_paths_location }}'
+    state: directory
+    owner: '{{ lidarr_themepark_env_puid }}'
+    group: '{{ lidarr_themepark_env_pgid }}'
+    mode: '0755'
+
+################################
+# CONTAINER
+################################
+
+- name: Create themepark container
+  community.docker.docker_container:
+    name: '{{ lidarr_themepark_basics_name }}'
+    image: '{{ lidarr_themepark_basics_image_repo }}:{{ lidarr_themepark_basics_image_tag }}'
+    networks: '{{ lidarr_network_backend }}'
+    env:
+      PUID: '{{ lidarr_themepark_env_puid }}'
+      PGID: '{{ lidarr_themepark_env_pgid }}'
+      TZ: '{{ lidarr_themepark_env_timezone }}'
+    ports:
+      - '{{ lidarr_themepark_ports_host }}:{{ lidarr_themepark_ports_cont }}'    
+    volumes: '{{ lidarr_themepark_bind_mount }}'
+    restart_policy: '{{ lidarr_themepark_basics_restart_policy }}'

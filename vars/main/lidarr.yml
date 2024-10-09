@@ -40,10 +40,33 @@ lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend_driver is defined
                                        (lidarr_network_backend_subnet | trim | length > 0) }}'
 
 ################################
+# ENV
+################################
+
+lidarr_env_default:
+  PUID: '{{ lidarr_env_puid }}'
+  PGID: '{{ lidarr_env_pgid }}'
+  TZ: '{{ lidarr_env_timezone }}'
+
+lidarr_env_themepark_local:
+  TP_SCHEME: 'http'
+  TP_DOMAIN: '{{ lidarr_themepark_domain_local }}'
+  TP_HOTIO: 'true'
+  TP_THEME: '{{ lidarr_theme }}'
+
+lidarr_docker_envs: '{{ lidarr_env_default
+                        | combine((lidarr_env_themepark_local
+                                   if lidarr_themepark_local_is_enabled
+                                   else [])) }}'
+
+################################
 # BINDS
 ################################
 
 lidarr_docker_volumes: '{{ lidarr_volumes_binds_default
+                           + (lidarr_volumes_binds_themepark
+                              if lidarr_themepark_local_is_enabled
+                              else [])
                            + (lidarr_nfs_media_bind
                               if lidarr_nfs_media_volume_is_enabled
                               else [])
@@ -98,8 +121,8 @@ lidarr_traefik_labels_router_secure:
   traefik.http.routers.lidarr-api-rtr-secure.tls.options: 'tls-opts@file'
 
 lidarr_traefik_labels_themepark:
-  traefik.http.middlewares.themepark-portainer.plugin.themepark.app: '{{ lidarr_basics_name }}'
-  traefik.http.middlewares.themepark-portainer.plugin.themepark.theme: '{{ lidarr_traefik_themepark_theme }}'
+  traefik.http.middlewares.themepark-lidarr.plugin.themepark.app: 'lidarr'
+  traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_theme }}'
 
 lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
                            | combine(lidarr_traefik_labels_router)
@@ -127,3 +150,20 @@ lidarr_cloudflare_zone: '{{ lidarr_traefik_domain }}'
 lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_api_token is defined) and
                                   (lidarr_cloudflare_api_token is not none) and
                                   (lidarr_cloudflare_api_token | trim | length > 0) }}'
+
+################################
+# THEME
+################################
+
+lidarr_themepark_local_is_enabled: '{{ (lidarr_themepark_env_timezone is defined) and
+                                       (lidarr_themepark_env_timezone is not none) and
+                                       (lidarr_themepark_env_timezone | trim | length > 0) and
+                                       (lidarr_themepark_env_puid is defined) and
+                                       (lidarr_themepark_env_puid is not none) and
+                                       (lidarr_themepark_env_puid | trim | length > 0) and
+                                       (lidarr_themepark_env_pgid is defined) and
+                                       (lidarr_themepark_env_pgid is not none) and
+                                       (lidarr_themepark_env_pgid | trim | length > 0) and
+                                       (lidarr_themepark_domain_local is defined) and
+                                       (lidarr_themepark_domain_local is not none) and
+                                       (lidarr_themepark_domain_local | trim | length > 0) }}'

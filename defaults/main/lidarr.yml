@@ -53,6 +53,9 @@ lidarr_volumes_binds_default:
   - /etc/localtime:/etc/localtime:ro
   - '{{ lidarr_paths_location }}:/config'
 
+lidarr_volumes_binds_themepark:  ## only binds if local themepark is deployed
+  - '{{ lidarr_themepark_paths_location }}/docker-mods/98-themepark-lidarr:/etc/cont-init.d/98-themepark'
+
 ################################
 # AUTHELIA
 ################################
@@ -66,7 +69,6 @@ lidarr_authelia_name: 'authelia'
 lidarr_traefik_subdomain: '{{ lidarr_basics_name }}'
 lidarr_traefik_domain: ''
 lidarr_traefik_port: '8686'
-lidarr_traefik_themepark_theme: 'hotline'  ## See https://github.com/themepark-dev/theme.park
 
   ## traefik docker network
 lidarr_traefik_network: 'traefik_proxy'
@@ -80,3 +82,9 @@ lidarr_traefik_network_subnet: ''  ## only required if network doesn't exist
 lidarr_cloudflare_record_type: 'A'  ## A (IPV4), AAAA (IPV6), CNAME, etc
 lidarr_cloudflare_proxy: 'true'  ## true for cloudflare DNS SSL
 lidarr_cloudflare_api_token: ''
+
+################################
+# THEME
+################################
+
+lidarr_theme: 'hotline'  ## See https://github.com/themepark-dev/theme.park

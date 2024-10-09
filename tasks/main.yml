@@ -246,6 +246,22 @@
   ansible.builtin.include_tasks: 'prometheus/prometheus_cloudflare.yml'
 
 ################################
+# THEMEPARK
+################################
+
+- name: Run themepark tasks
+  when: lidarr_themepark_local_is_enabled
+  block:
+    - name: Register themepark container
+      community.docker.docker_container_info:
+        name: '{{ lidarr_themepark_basics_name }}'
+      register: lidarr_themepark_container_result
+
+    - name: Include themepark tasks
+      when: not lidarr_themepark_container_result.exists
+      ansible.builtin.include_tasks: 'sub_tasks/themepark.yml'
+
+################################
 # CONTAINER
 ################################
 
@@ -255,14 +271,10 @@
     name: '{{ lidarr_basics_name }}'
     image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
     networks: '{{ lidarr_docker_networks }}'
-    env:
-      PUID: '{{ lidarr_env_puid }}'
-      PGID: '{{ lidarr_env_pgid }}'
-      TZ: '{{ lidarr_env_timezone }}'
+    env: '{{ lidarr_docker_envs }}'
     ports:
       - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
     volumes: '{{ lidarr_docker_volumes }}'
-#    healthcheck:
     restart_policy: '{{ lidarr_basics_restart_policy }}'
 
 - name: Create lidarr traefik container
@@ -271,13 +283,9 @@
     name: '{{ lidarr_basics_name }}'
     image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
     networks: '{{ lidarr_docker_networks }}'
-    env:
-      PUID: '{{ lidarr_env_puid }}'
-      PGID: '{{ lidarr_env_pgid }}'
-      TZ: '{{ lidarr_env_timezone }}'
+    env: '{{ lidarr_docker_envs }}'
     labels: '{{ lidarr_traefik_labels }}'
     ports:
       - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
     volumes: '{{ lidarr_docker_volumes }}'
-#    healthcheck:
     restart_policy: '{{ lidarr_basics_restart_policy }}'
