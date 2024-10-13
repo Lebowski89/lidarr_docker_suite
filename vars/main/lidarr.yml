@@ -23,13 +23,13 @@ lidarr_network_prometheus_bind:
 
 lidarr_docker_networks: '{{ lidarr_network_default_bind
                             + (lidarr_network_postgres_bind
-                               if lidarr_postgres_is_enabled
+                               if lidarr_toggles_enable_postgres
                                else [])
                             + (lidarr_network_traefik_bind
-                               if lidarr_traefik_is_enabled
+                               if lidarr_toggles_enable_traefik
                                else [])
                             + (lidarr_network_prometheus_bind
-                               if lidarr_prometheus_is_enabled
+                               if lidarr_toggles_enable_metrics
                                else []) }}'
 
 lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend_driver is defined) and
@@ -52,11 +52,11 @@ lidarr_env_themepark_local:
   TP_SCHEME: 'http'
   TP_DOMAIN: '{{ lidarr_themepark_domain_local }}'
   TP_HOTIO: 'true'
-  TP_THEME: '{{ lidarr_theme_local }}'
+  TP_THEME: '{{ lidarr_themepark_domain_local_theme }}'
 
 lidarr_docker_envs: '{{ lidarr_env_default
                         | combine((lidarr_env_themepark_local
-                                   if lidarr_themepark_local_is_enabled
+                                   if lidarr_toggles_enable_themepark_local
                                    else [])) }}'
 
 ################################
@@ -65,22 +65,22 @@ lidarr_docker_envs: '{{ lidarr_env_default
 
 lidarr_docker_volumes: '{{ lidarr_volumes_binds_default
                            + (lidarr_volumes_binds_themepark
-                              if lidarr_themepark_local_is_enabled
+                              if lidarr_toggles_enable_themepark_local
                               else [])
-                           + (lidarr_nfs_media_bind
-                              if lidarr_nfs_media_volume_is_enabled
+                           + (lidarr_nfs_volume_bind
+                              if lidarr_toggles_enable_nfs_volume
                               else [])
-                           + (lidarr_rclone_qbittorrent_bind
-                              if lidarr_rclone_qbittorrent_is_enabled
+                           + (lidarr_rclone_volume_bind
+                              if lidarr_toggles_enable_rclone
                               else []) }}'
 
 ################################
 # AUTHELIA
 ################################
 
-lidarr_authelia_is_enabled: '{{ (lidarr_authelia_name is defined) and
-                                (lidarr_authelia_name is not none) and
-                                (lidarr_authelia_name | trim | length > 0) }}'
+lidarr_authelia_is_enabled: '{{ (lidarr_traefik_authelia_container_name is defined) and
+                                (lidarr_traefik_authelia_container_name is not none) and
+                                (lidarr_traefik_authelia_container_name | trim | length > 0) }}'
 
 ################################
 # TRAEFIK
@@ -91,43 +91,49 @@ lidarr_traefik_labels_default:
   traefik.docker.network: '{{ lidarr_traefik_network }}'
 
 lidarr_traefik_labels_router:
+  ## http
   traefik.http.routers.lidarr-rtr.entrypoints: 'http'
-  traefik.http.routers.lidarr-rtr.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
-  traefik.http.routers.lidarr-rtr.middlewares: 'globalHeaders@file,robotHeaders@file,authelia@docker,cloudflarewarp@docker'
-  traefik.http.routers.lidarr-rtr.priority: '20'
+  traefik.http.routers.lidarr-rtr.rule: '{{ lidarr_traefik_http_rule }}'
+  traefik.http.routers.lidarr-rtr.middlewares: '{{ lidarr_traefik_http_middlewares_bind }}'
+  traefik.http.routers.lidarr-rtr.priority: '{{ lidarr_traefik_http_priority }}'
   traefik.http.routers.lidarr-rtr.service: 'lidarr-rtr-svc'
   traefik.http.services.lidarr-rtr-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
+  ## http-api
   traefik.http.routers.lidarr-api-rtr.entrypoints: 'http'
-  traefik.http.routers.lidarr-api-rtr.middlewares: 'globalHeaders@file,robotHeaders@file'
-  traefik.http.routers.lidarr-api-rtr.priority: '30'
-  traefik.http.routers.lidarr-api-rtr.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`) && (PathPrefix(`/api`) || PathPrefix(`/feed`) || PathPrefix(`/ping`))'
+  traefik.http.routers.lidarr-api-rtr.rule: '{{ lidarr_traefik_http_api_rule }}'
+  traefik.http.routers.lidarr-api-rtr.middlewares: '{{ lidarr_traefik_http_api_middlewares_bind }}'
+  traefik.http.routers.lidarr-api-rtr.priority: '{{ lidarr_traefik_http_api_priority }}'
   traefik.http.routers.lidarr-api-rtr.service: 'lidarr-rtr-svc'
 
 lidarr_traefik_labels_router_secure:
+  ## https
   traefik.http.routers.lidarr-rtr-secure.entrypoints: 'https'
-  traefik.http.routers.lidarr-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`)'
-  traefik.http.routers.lidarr-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,authelia@docker,cloudflarewarp@docker,themepark-lidarr'
-  traefik.http.routers.lidarr-rtr-secure.priority: '20'
+  traefik.http.routers.lidarr-rtr-secure.rule: '{{ lidarr_traefik_https_rule }}'
+  traefik.http.routers.lidarr-rtr-secure.middlewares: '{{ lidarr_traefik_https_middlewares_bind }}'
+  traefik.http.routers.lidarr-rtr-secure.priority: '{{ lidarr_traefik_https_priority }}'
   traefik.http.routers.lidarr-rtr-secure.service: 'lidarr-rtr-secure-svc'
-  traefik.http.routers.lidarr-rtr-secure.tls.certresolver: 'dns-cloudflare'
-  traefik.http.routers.lidarr-rtr-secure.tls.options: 'tls-opts@file'
+  traefik.http.routers.lidarr-rtr-secure.tls.certresolver: '{{ lidarr_traefik_tls_certresolver }}'
+  traefik.http.routers.lidarr-rtr-secure.tls.options: '{{ lidarr_traefik_tls_options }}'
   traefik.http.services.lidarr-rtr-secure-svc.loadbalancer.server.port: '{{ lidarr_traefik_port }}'
+  ## https-api
   traefik.http.routers.lidarr-api-rtr-secure.entrypoints: 'https'
-  traefik.http.routers.lidarr-api-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,cloudflarewarp@docker'
-  traefik.http.routers.lidarr-api-rtr-secure.priority: '30'
-  traefik.http.routers.lidarr-api-rtr-secure.rule: 'Host(`{{ lidarr_traefik_subdomain }}.{{ lidarr_traefik_domain }}`) && (PathPrefix(`/api`) || PathPrefix(`/feed`) || PathPrefix(`/ping`))'
+  traefik.http.routers.lidarr-api-rtr-secure.rule: '{{ lidarr_traefik_https_api_rule }}'
+  traefik.http.routers.lidarr-api-rtr-secure.middlewares: '{{ lidarr_traefik_https_api_middlewares_bind }}'
+  traefik.http.routers.lidarr-api-rtr-secure.priority: '{{ lidarr_traefik_https_api_priority }}'
   traefik.http.routers.lidarr-api-rtr-secure.service: 'lidarr-rtr-secure-svc'
-  traefik.http.routers.lidarr-api-rtr-secure.tls.certresolver: 'dns-cloudflare'
-  traefik.http.routers.lidarr-api-rtr-secure.tls.options: 'tls-opts@file'
-
+  traefik.http.routers.lidarr-api-rtr-secure.tls.certresolver: '{{ lidarr_traefik_tls_certresolver }}'
+  traefik.http.routers.lidarr-api-rtr-secure.tls.options: '{{ lidarr_traefik_tls_options }}'
+  ## theme-park
 lidarr_traefik_labels_themepark:
   traefik.http.middlewares.themepark-lidarr.plugin.themepark.app: 'lidarr'
-  traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_theme_traefik }}'
+  traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_traefik_themepark_theme }}'
 
 lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
                            | combine(lidarr_traefik_labels_router)
                            | combine(lidarr_traefik_labels_router_secure)
-                           | combine(lidarr_traefik_labels_themepark) }}'
+                           | combine((lidarr_traefik_labels_themepark
+                                      if lidarr_toggles_enable_themepark_traefik
+                                      else [])) }}'
 
 lidarr_traefik_is_enabled: '{{ (lidarr_traefik_domain is defined) and
                                (lidarr_traefik_domain is not none) and
@@ -140,6 +146,35 @@ lidarr_traefik_network_is_enabled: '{{ (lidarr_traefik_network_driver is defined
                                        (lidarr_traefik_network_subnet is not none) and
                                        (lidarr_traefik_network_subnet | trim | length > 0) }}'
 
+lidarr_traefik_http_middlewares_bind: '{{ lidarr_traefik_http_middlewares
+                                          + (",cloudflarewarp@docker"
+                                             if (lidarr_toggles_enable_cloudflarewarp)
+                                             else "")
+                                          + (",authelia@docker"
+                                             if (lidarr_toggles_enable_authelia_middleware)
+                                             else "") }}'
+
+lidarr_traefik_http_api_middlewares_bind: '{{ lidarr_traefik_http_api_middlewares
+                                              + (",cloudflarewarp@docker"
+                                                 if (lidarr_toggles_enable_cloudflarewarp)
+                                                 else "") }}'
+
+lidarr_traefik_https_middlewares_bind: '{{ lidarr_traefik_https_middlewares
+                                           + (",cloudflarewarp@docker"
+                                              if (lidarr_toggles_enable_cloudflarewarp)
+                                              else "")
+                                           + (",authelia@docker"
+                                              if (lidarr_toggles_enable_authelia_middleware)
+                                              else "") 
+                                           + (",themepark-lidarr"
+                                              if (lidarr_toggles_enable_themepark_traefik)
+                                              else "") }}'
+
+lidarr_traefik_https_api_middlewares_bind: '{{ lidarr_traefik_https_api_middlewares
+                                               + (",cloudflarewarp@docker"
+                                                  if (lidarr_toggles_enable_cloudflarewarp)
+                                                  else "") }}'
+
 ################################
 # CLOUDFLARE
 ################################
@@ -150,20 +185,3 @@ lidarr_cloudflare_zone: '{{ lidarr_traefik_domain }}'
 lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_api_token is defined) and
                                   (lidarr_cloudflare_api_token is not none) and
                                   (lidarr_cloudflare_api_token | trim | length > 0) }}'
-
-################################
-# THEME
-################################
-
-lidarr_themepark_local_is_enabled: '{{ (lidarr_themepark_env_timezone is defined) and
-                                       (lidarr_themepark_env_timezone is not none) and
-                                       (lidarr_themepark_env_timezone | trim | length > 0) and
-                                       (lidarr_themepark_env_puid is defined) and
-                                       (lidarr_themepark_env_puid is not none) and
-                                       (lidarr_themepark_env_puid | trim | length > 0) and
-                                       (lidarr_themepark_env_pgid is defined) and
-                                       (lidarr_themepark_env_pgid is not none) and
-                                       (lidarr_themepark_env_pgid | trim | length > 0) and
-                                       (lidarr_themepark_domain_local is defined) and
-                                       (lidarr_themepark_domain_local is not none) and
-                                       (lidarr_themepark_domain_local | trim | length > 0) }}'

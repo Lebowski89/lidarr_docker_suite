@@ -1,20 +1,6 @@
 ---
 
 ################################
-# BASICS
-################################
-
-lidarr_prometheus_is_enabled: '{{ (lidarr_prometheus_env_timezone is defined) and
-                                  (lidarr_prometheus_env_timezone is not none) and
-                                  (lidarr_prometheus_env_timezone | trim | length > 0) and
-                                  (lidarr_prometheus_env_puid is defined) and
-                                  (lidarr_prometheus_env_puid is not none) and
-                                  (lidarr_prometheus_env_puid | trim | length > 0) and
-                                  (lidarr_prometheus_env_pgid is defined) and
-                                  (lidarr_prometheus_env_pgid is not none) and
-                                  (lidarr_prometheus_env_pgid | trim | length > 0) }}'
-
-################################
 # COMMANDS
 ################################
 
@@ -37,11 +23,9 @@ lidarr_prometheus_network_bind:
 
 lidarr_prometheus_docker_networks: '{{ lidarr_prometheus_network_default_bind
                                        + (lidarr_prometheus_network_traefik_bind
-                                          if lidarr_prometheus_traefik_is_enabled
+                                          if lidarr_toggles_enable_traefik
                                           else [])
-                                       + (lidarr_prometheus_network_bind
-                                          if lidarr_prometheus_is_enabled
-                                          else []) }}'
+                                       + lidarr_prometheus_network_bind }}'
 
 lidarr_prometheus_network_is_enabled: '{{ (lidarr_prometheus_network_driver is defined) and
                                           (lidarr_prometheus_network_driver is not none) and
@@ -61,26 +45,26 @@ lidarr_prometheus_volumes_binds: '{{ lidarr_prometheus_binds_config_mapping
 # TRAEFIK
 ################################
 
-lidarr_prometheus_traefik_labels_default:
+lidarr_promtheus_traefik_labels_default:
   traefik.enable: 'true'
   traefik.docker.network: '{{ lidarr_prometheus_traefik_network }}'
 
-lidarr_prometheus_traefik_labels_router:
+lidarr_promtheus_traefik_labels_router:
   traefik.http.routers.prometheus-rtr.entrypoints: 'http'
-  traefik.http.routers.prometheus-rtr.rule: 'Host(`{{ lidarr_prometheus_traefik_subdomain }}.{{ lidarr_prometheus_traefik_domain }}`)'
-  traefik.http.routers.prometheus-rtr.middlewares: 'globalHeaders@file,robotHeaders@file,authelia@docker'
-  traefik.http.routers.prometheus-rtr.priority: '20'
+  traefik.http.routers.prometheus-rtr.rule: '{{ lidarr_prometheus_traefik_http_rule }}'
+  traefik.http.routers.prometheus-rtr.middlewares: '{{ lidarr_prometheus_traefik_http_middlewares_bind }}'
+  traefik.http.routers.prometheus-rtr.priority: '{{ lidarr_prometheus_traefik_http_priority }}'
   traefik.http.routers.prometheus-rtr.service: 'prometheus-rtr-svc'
   traefik.http.services.prometheus-rtr-svc.loadbalancer.server.port: '{{ lidarr_prometheus_traefik_port }}'
 
-lidarr_prometheus_traefik_labels_router_secure:
+lidarr_promtheus_traefik_labels_router_secure:
   traefik.http.routers.prometheus-rtr-secure.entrypoints: 'https'
-  traefik.http.routers.prometheus-rtr-secure.rule: 'Host(`{{ lidarr_prometheus_traefik_subdomain }}.{{ lidarr_prometheus_traefik_domain }}`)'
-  traefik.http.routers.prometheus-rtr-secure.middlewares: 'globalHeaders@file,secureHeaders@file,robotHeaders@file,authelia@docker'
-  traefik.http.routers.prometheus-rtr-secure.priority: '20'
+  traefik.http.routers.prometheus-rtr-secure.rule: '{{ lidarr_prometheus_traefik_https_rule }}'
+  traefik.http.routers.prometheus-rtr-secure.middlewares: '{{ lidarr_prometheus_traefik_https_middlewares_bind }}'
+  traefik.http.routers.prometheus-rtr-secure.priority: '{{ lidarr_prometheus_traefik_https_priority }}'
   traefik.http.routers.prometheus-rtr-secure.service: 'prometheus-rtr-secure-svc'
-  traefik.http.routers.prometheus-rtr-secure.tls.certresolver: 'dns-cloudflare'
-  traefik.http.routers.prometheus-rtr-secure.tls.options: 'tls-opts@file'
+  traefik.http.routers.prometheus-rtr-secure.tls.certresolver: '{{ lidarr_prometheus_traefik_tls_certresolver }}'
+  traefik.http.routers.prometheus-rtr-secure.tls.options: '{{ lidarr_prometheus_traefik_tls_options }}'
   traefik.http.services.prometheus-rtr-secure-svc.loadbalancer.server.port: '{{ lidarr_prometheus_traefik_port }}'
 
 lidarr_prometheus_traefik_labels: '{{ lidarr_prometheus_traefik_labels_default
@@ -90,6 +74,22 @@ lidarr_prometheus_traefik_labels: '{{ lidarr_prometheus_traefik_labels_default
 lidarr_prometheus_traefik_is_enabled: '{{ (lidarr_prometheus_traefik_domain is defined) and
                                           (lidarr_prometheus_traefik_domain is not none) and
                                           (lidarr_prometheus_traefik_domain | trim | length > 0) }}'
+
+lidarr_prometheus_traefik_http_middlewares_bind: '{{ lidarr_prometheus_traefik_http_middlewares
+                                                     + (",cloudflarewarp@docker"
+                                                        if (lidarr_toggles_enable_cloudflarewarp)
+                                                        else "")
+                                                     + (",authelia@docker"
+                                                        if (lidarr_toggles_enable_authelia_middleware)
+                                                        else "") }}'
+
+lidarr_prometheus_traefik_https_middlewares_bind: '{{ lidarr_prometheus_traefik_https_middlewares
+                                                      + (",cloudflarewarp@docker"
+                                                         if (lidarr_toggles_enable_cloudflarewarp)
+                                                         else "")
+                                                      + (",authelia@docker"
+                                                         if (lidarr_toggles_enable_authelia_middleware)
+                                                         else "") }}'
 
 ################################
 # CLOUDFLARE
@@ -112,16 +112,4 @@ lidarr_prometheus_exporter_network_bind:
   - name: '{{ lidarr_prometheus_network }}'
 
 lidarr_prometheus_exporter_networks: '{{ lidarr_prometheus_exporter_network_default_bind
-                                         + (lidarr_prometheus_exporter_network_bind
-                                            if lidarr_prometheus_is_enabled
-                                            else []) }}'
-
-lidarr_prometheus_exporter_is_enabled: '{{ (lidarr_prometheus_exporter_env_timezone is defined) and
-                                           (lidarr_prometheus_exporter_env_timezone is not none) and
-                                           (lidarr_prometheus_exporter_env_timezone | trim | length > 0) and
-                                           (lidarr_prometheus_exporter_env_puid is defined) and
-                                           (lidarr_prometheus_exporter_env_puid is not none) and
-                                           (lidarr_prometheus_exporter_env_puid | trim | length > 0) and
-                                           (lidarr_prometheus_exporter_env_pgid is defined) and
-                                           (lidarr_prometheus_exporter_env_pgid is not none) and
-                                           (lidarr_prometheus_exporter_env_pgid | trim | length > 0) }}'
+                                         + lidarr_prometheus_exporter_network_bind }}'

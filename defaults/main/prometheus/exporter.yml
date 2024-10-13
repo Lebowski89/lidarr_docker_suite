@@ -1,0 +1,25 @@
+---
+
+################################
+# BASICS
+################################
+
+lidarr_prometheus_exporter_name: '{{ lidarr_basics_name }}_exporter'
+lidarr_prometheus_exporter_image_repo: 'ghcr.io/onedr0p/exportarr'
+lidarr_prometheus_exporter_image_tag: 'v2.0.1'
+lidarr_prometheus_exporter_restart_policy: 'unless-stopped'
+
+################################
+# ENV
+################################
+
+lidarr_prometheus_exporter_env_timezone: 'Etc/UTC'
+lidarr_prometheus_exporter_env_puid: '1000'
+lidarr_prometheus_exporter_env_pgid: '1000'
+
+################################
+# PORTS
+################################
+
+lidarr_prometheus_exporter_host_port: '9709'
+lidarr_prometheus_exporter_cont_port: '9709'

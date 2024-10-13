@@ -1,0 +1,34 @@
+---
+
+################################
+# ENV
+################################
+
+lidarr_nfs_env_puid: '1000'
+lidarr_nfs_env_pgid: '1000'
+
+################################
+# AUTOFS
+################################
+
+lidarr_autofs_mount_host_address: ''
+lidarr_autofs_mount_remote_path: ''
+lidarr_autofs_mount_local_dir_name: ''
+lidarr_autofs_mount_opt: '-fstype=nfs,port=2049,rw,timeo=100,noatime'
+
+################################
+# DOCKER VOLUME
+################################
+
+lidarr_nfs_volume_name: ''
+lidarr_nfs_volume_address: ''
+lidarr_nfs_volume_device: ''
+lidarr_nfs_volume_permissions: 'rw'
+lidarr_nfs_volume_version: '4'
+
+################################
+# BINDS
+################################
+
+lidarr_nfs_volume_bind:
+  - '{{ lidarr_nfs_volume_name }}:/data'

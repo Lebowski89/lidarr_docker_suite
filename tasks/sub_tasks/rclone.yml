@@ -1,12 +1,12 @@
 ---
 
-- name: Register lidarr rclone qbittorrent volume
+- name: Register lidarr rclone volume
   community.docker.docker_volume_info:
-    name: '{{ lidarr_rclone_qbittorrent_name }}'
-  register: lidarr_rclone_qbittorrent_initial_volume_result
+    name: '{{ lidarr_rclone_volume_name }}'
+  register: lidarr_rclone_volume_initial_volume_result
 
 - name: Perform rclone docker volume creation tasks
-  when: not lidarr_rclone_qbittorrent_initial_volume_result.exists
+  when: not lidarr_rclone_volume_initial_volume_result.exists
   block:
     - name: Install FUSE driver prerequisite
       when: ansible_os_family == 'Debian'
@@ -58,16 +58,16 @@
         group: '{{ lidarr_rclone_docker_plugin_env_pgid }}'
         mode: '0644'
 
-    - name: Create sftp rclone qbittorrent volume
+    - name: Create sftp rclone volume
       community.docker.docker_volume:
-        name: '{{ lidarr_rclone_qbittorrent_name }}'
+        name: '{{ lidarr_rclone_volume_name }}'
         driver: rclone
         driver_options:
-          type: '{{ lidarr_rclone_qbittorrent_type }}'
-          path: '{{ lidarr_rclone_qbittorrent_mount_path }}'
-          sftp-host: '{{ lidarr_rclone_qbittorrent_host }}'
-          sftp-user: '{{ lidarr_rclone_qbittorrent_user }}'
-          sftp-pass: '{{ lidarr_rclone_qbittorrent_pass }}'
-          sftp-key-file-pass: '{{ lidarr_rclone_qbittorrent_key_file_pass }}'
+          type: '{{ lidarr_rclone_volume_type }}'
+          path: '{{ lidarr_rclone_volume_mount_path }}'
+          sftp-host: '{{ lidarr_rclone_volume_host }}'
+          sftp-user: '{{ lidarr_rclone_volume_user }}'
+          sftp-pass: '{{ lidarr_rclone_volume_pass }}'
+          sftp-key-file-pass: '{{ lidarr_rclone_volume_key_file_pass }}'
           allow_other: 'true'
           vfs_cache_mode: 'off'

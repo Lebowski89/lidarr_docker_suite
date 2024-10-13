@@ -13,19 +13,18 @@ lidarr_themepark_basics_restart_policy: 'unless-stopped'
 # ENV
 ################################
 
-lidarr_themepark_env_timezone: ''
-lidarr_themepark_env_puid: ''
-lidarr_themepark_env_pgid: ''
+lidarr_themepark_env_timezone: 'Etc/UTC'
+lidarr_themepark_env_puid: '1000'
+lidarr_themepark_env_pgid: '1000'
 
 ################################
 # DOMAIN (LOCAL)
 ################################
 
-  ## Fill if wanting themes served locally via http on local network.
-  ## Will deploy theme-park in a docker container.
   ## Must be accessible to your browser - try: '<local_machine_ip>:{{ lidarr_themepark_ports_host }}'
 
 lidarr_themepark_domain_local: ''
+lidarr_themepark_domain_local_theme: 'hotline'  ## theme to use for local theme-park deployment
 
 ################################
 # PORTS
@@ -47,5 +46,3 @@ lidarr_themepark_paths_location: '/opt/{{ lidarr_themepark_paths_folder }}'
 
 lidarr_themepark_bind_mount:
   - '{{ lidarr_themepark_paths_location }}:/config'
-
-

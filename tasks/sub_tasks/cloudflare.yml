@@ -1,9 +1,5 @@
 ---
 
-################################
-# LIDARR
-################################
-
 - name: Remove existing CNAME DNS record
   community.general.cloudflare_dns:
     api_token: '{{ lidarr_cloudflare_api_token }}'

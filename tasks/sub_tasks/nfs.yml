@@ -1,7 +1,9 @@
 ---
 
 - name: Perform autofs media mount tasks
-  when: lidarr_autofs_media_mount_is_enabled
+  when:
+    - lidarr_toggles_enable_nfs_autofs
+    - lidarr_autofs_mount_is_enabled
   block:
     - name: Install autofs
       when: ansible_os_family == 'Debian'
@@ -33,7 +35,7 @@
     - name: Add mount to auto.nfsdb file
       ansible.builtin.lineinfile:
         dest: '{{ lidarr_autofs_nfsdb_file }}'
-        line: '{{ lidarr_autofs_media_mount_local_dir_name }} {{ lidarr_autofs_media_mount_opt }} {{ lidarr_autofs_media_mount_host_address }}:{{ lidarr_autofs_media_mount_remote_path }}'
+        line: '{{ lidarr_autofs_mount_local_dir_name }} {{ lidarr_autofs_mount_opt }} {{ lidarr_autofs_mount_host_address }}:{{ lidarr_autofs_mount_remote_path }}'
         state: present
         create: true
         owner: '{{ lidarr_nfs_env_puid }}'
@@ -43,15 +45,17 @@
         - redo mounts
 
 - name: Create lidarr nfs media volume
-  when: lidarr_nfs_media_volume_is_enabled
+  when: 
+    - lidarr_toggles_enable_nfs_volume
+    - lidarr_nfs_volume_is_enabled
   block:
-    - name: Create lidarr media nfs volume
+    - name: Create lidarr nfs volume
       community.docker.docker_volume:
-        volume_name: '{{ lidarr_nfs_media_name }}'
+        volume_name: '{{ lidarr_nfs_volume_name }}'
         state: present
         recreate: options-changed
         driver: local
         driver_options:
           type: nfs
-          o: 'addr={{ lidarr_nfs_media_address }},{{ lidarr_nfs_media_permissions }},nfsvers={{ lidarr_nfs_media_version }}'
-          device: '{{ lidarr_nfs_media_device }}'
+          o: 'addr={{ lidarr_nfs_volume_address }},{{ lidarr_nfs_volume_permissions }},nfsvers={{ lidarr_nfs_volume_version }}'
+          device: '{{ lidarr_nfs_volume_device }}'

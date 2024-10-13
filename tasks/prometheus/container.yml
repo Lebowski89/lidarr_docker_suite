@@ -59,7 +59,28 @@
   register: lidarr_prometheus_container_result
 
 - name: Create prometheus container
-  when: not lidarr_prometheus_container_result.exists
+  when: 
+    - not lidarr_prometheus_container_result.exists
+    - (not lidarr_toggles_enable_traefik) or (not lidarr_prometheus_traefik_is_enabled)
+  community.docker.docker_container:
+    name: '{{ lidarr_prometheus_basics_name }}'
+    image: '{{ lidarr_prometheus_basics_image_repo }}:{{ lidarr_prometheus_basics_image_tag }}'
+    networks: '{{ lidarr_prometheus_docker_networks }}'
+    command: '{{ lidarr_prometheus_commands | reject("equalto", omit) | list }}'
+    env:
+      PUID: '{{ lidarr_prometheus_env_puid }}'
+      PGID: '{{ lidarr_prometheus_env_pgid }}'
+      TZ: '{{ lidarr_prometheus_env_timezone }}'
+    ports:
+      - '{{ lidarr_prometheus_ports_host }}:{{ lidarr_prometheus_ports_cont }}'
+    volumes: '{{ lidarr_prometheus_volumes_binds }}'
+    restart_policy: '{{ lidarr_prometheus_basics_restart_policy }}'
+
+- name: Create prometheus traefik container
+  when: 
+    - not lidarr_prometheus_container_result.exists
+    - lidarr_toggles_enable_traefik
+    - lidarr_prometheus_traefik_is_enabled
   community.docker.docker_container:
     name: '{{ lidarr_prometheus_basics_name }}'
     image: '{{ lidarr_prometheus_basics_image_repo }}:{{ lidarr_prometheus_basics_image_tag }}'

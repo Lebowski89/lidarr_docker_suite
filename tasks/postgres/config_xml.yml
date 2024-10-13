@@ -103,7 +103,7 @@
 - name: Clean lidarr appdir
   block:
     - name: Remove sqlite database files
-      when: lidarr_postgres_clean_files
+      when: lidarr_toggles_clean_files
       ansible.builtin.file:
         path: '{{ lidarr_paths_location }}/{{ item }}'
         state: absent
@@ -116,7 +116,7 @@
         - lidarr.db-wal
 
     - name: Remove sqlite backups folder
-      when: lidarr_postgres_clean_folders
+      when: lidarr_toggles_clean_folders
       ansible.builtin.file:
         path: '{{ lidarr_paths_location }}/Backups'
         state: absent
