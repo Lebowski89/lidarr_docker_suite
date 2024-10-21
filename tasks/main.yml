@@ -1,11 +1,19 @@
 ---
 
 ################################
+# PREFIX
+################################
+
+- name: Set 'role_prefix' variable
+  ansible.builtin.set_fact:
+    role_prefix: 'lidarr'
+
+################################
 # DEPENDENCIES
 ################################
 
 - name: Install prerequisite apt packages
-  when: lidarr_toggles_enable_apt_packages
+  when: (lookup("vars", role_prefix + "_toggles_enable_apt_packages"))
   ansible.builtin.apt:
     pkg:
       - python3-requests
@@ -24,7 +32,7 @@
 
 - name: Apt install docker if required
   when:
-    - lidarr_toggles_enable_docker_install
+    - (lookup("vars", role_prefix + "_toggles_enable_docker_install"))
     - ansible_os_family == 'Debian'
   block:
     - name: Gather apt facts
@@ -39,131 +47,140 @@
 # CLEAN UP
 ################################
 
-- name: Register lidarr container
+- name: Register container
   community.docker.docker_container_info:
-    name: '{{ lidarr_basics_name }}'
+    name: '{{ lookup("vars", role_prefix + "_basics_name") }}'
   register: lidarr_existing_container_result
 
-- name: Remove existing lidarr container
+- name: Remove existing container
   when: lidarr_existing_container_result.exists
   community.docker.docker_container:
     container_default_behavior: compatibility
-    name: '{{ lidarr_basics_name }}'
+    name: '{{ lookup("vars", role_prefix + "_basics_name") }}'
     state: absent
     stop_timeout: 10
-  register: remove_lidarr_docker
+  register: lidarr_remove_docker_container
   retries: 5
   delay: 10
-  until: remove_lidarr_docker is succeeded
+  until: lidarr_remove_docker_container is succeeded
 
 ################################
 # BACKEND NETWORK
 ################################
 
 - name: Conduct backend network tasks
-  when: lidarr_network_backend_is_enabled
   block:
-    - name: Register lidarr backend network
+    - name: Register backend network
       community.docker.docker_network_info:
-        name: '{{ lidarr_network_backend }}'
-      register: lidarr_net_backend_result
+        name: '{{ lookup("vars", role_prefix + "_network_backend") }}'
+      register: lidarr_network_backend_result
 
-    - name: Lidarr network backend builtin fail
+    - name: Network backend builtin fail
       ansible.builtin.fail:
-        msg: lidarr backend network does not exist nor is it enabled. Ensure the lidarr backend network variables contain valid entries.
+        msg: Backend network does not exist nor is it enabled. Ensure the backend network variables contain valid entries.
       when:
-        - not lidarr_net_backend_result.exists
-        - not lidarr_network_backend_is_enabled
+        - not (lookup("vars", role_prefix + "_network_backend_is_enabled"))
+        - not lidarr_network_backend_result.exists
 
-    - name: Create lidarr backend network
+    - name: Create backend network
       when:
-        - not lidarr_net_backend_result.exists
-        - lidarr_network_backend_is_enabled
+        - (lookup("vars", role_prefix + "_network_backend_is_enabled"))
+        - not lidarr_network_backend_result.exists
       community.docker.docker_network:
-        name: '{{ lidarr_network_backend }}'
-        driver: '{{ lidarr_network_backend_driver }}'
+        name: '{{ lookup("vars", role_prefix + "_network_backend") }}'
+        driver: '{{ lookup("vars", role_prefix + "_network_backend_driver") }}'
         ipam_config:
-          - subnet: '{{ lidarr_network_backend_subnet }}'
+          - subnet: '{{ lookup("vars", role_prefix + "_network_backend_subnet") }}'
 
 ################################
 # APPDATA
 ################################
 
-- name: Create lidarr appdata directory
+- name: Create appdata directory
   ansible.builtin.file:
-    path: '{{ lidarr_paths_location }}'
+    path: '{{ lookup("vars", role_prefix + "_paths_location") }}'
     state: directory
-    owner: '{{ lidarr_env_puid }}'
-    group: '{{ lidarr_env_pgid }}'
+    owner: '{{ lookup("vars", role_prefix + "_env_puid") }}'
+    group: '{{ lookup("vars", role_prefix + "_env_pgid") }}'
     mode: '0755'
 
 ################################
 # CONFIG
 ################################
 
-- name: Check if lidarr config.xml exists
+- name: Check if config.xml exists
   ansible.builtin.stat:
-    path: '{{ lidarr_paths_location }}/config.xml'
+    path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
   register: lidarr_config_xml
 
-- name: Create lidarr config.xml file
+- name: Create config.xml file
   when: not lidarr_config_xml.stat.exists
   block:
     - name: Import config file
       ansible.builtin.template:
-        src: '{{ role_path }}/templates/config.xml.j2'
-        dest: '{{ lidarr_paths_location }}/config.xml'
+        src: '{{ role_path }}/templates/lidarr_config.xml.j2'
+        dest: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         force: true
-        owner: '{{ lidarr_env_puid }}'
-        group: '{{ lidarr_env_pgid }}'
+        owner: '{{ lookup("vars", role_prefix + "_env_puid") }}'
+        group: '{{ lookup("vars", role_prefix + "_env_pgid") }}'
         mode: '0664'
 
     - name: Wait for 'config.xml' to be created
       ansible.builtin.wait_for:
-        path: '{{ lidarr_paths_location }}/config.xml'
+        path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         state: present
 
-    - name: Lidarr config.xml | Lookup Apikey value
-      when: lidarr_api_key_is_enabled
+################################
+# CONFIG (API)
+################################
+
+    - name: Lookup Apikey value
+      when: (lookup("vars", role_prefix + "_api_key_is_enabled"))
       community.general.xml:
-        path: '{{ lidarr_paths_location }}/config.xml'
+        path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         xpath: /Config/ApiKey
         content: text
-      register: xml_lidarr_api
+      register: lidarr_xml_api
 
-    - name: Lidarr config.xml | insert existing api key
+    - name: Insert existing api key
       when:
-        - lidarr_api_key_is_enabled
-        - ((xml_lidarr_api.matches[0].ApiKey is defined) and (xml_lidarr_api.matches[0].ApiKey != lidarr_api_key))
+        - (lookup("vars", role_prefix + "_api_key_is_enabled"))
+        - (lidarr_xml_api.matches[0].ApiKey is defined) and (lidarr_xml_api.matches[0].ApiKey != lookup("vars", role_prefix + "_api_key"))
       community.general.xml:
-        path: '{{ lidarr_paths_location }}/config.xml'
+        path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         xpath: /Config/ApiKey
-        value: '{{ lidarr_api_key }}'
+        value: '{{ lookup("vars", role_prefix + "_api_key") }}'
 
-    - name: Lidarr config.xml | Lookup AuthenticationMethod value
-      when: lidarr_authelia_is_enabled
+################################
+# CONFIG (AUTHELIA)
+################################
+
+- name: Change config auth to external if Authelia present
+  when: (lookup("vars", role_prefix + "_toggles_enable_external_auth"))
+  block:
+    - name: Authelia builtin fail
+      when: not (lookup("vars", role_prefix + "_authelia_is_enabled"))
+      ansible.builtin.fail:
+        msg: Authelia is toggled on, but the Authelia container variable is empty.
+
+    - name: Lookup AuthenticationMethod value
       community.general.xml:
-        path: '{{ lidarr_paths_location }}/config.xml'
+        path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         xpath: /Config/AuthenticationMethod
         content: text
-      register: xml_lidarr_external
+      register: lidarr_xml_external
 
     - name: Register authelia container
-      when: 
-        - lidarr_toggles_enable_authelia
-        - lidarr_authelia_is_enabled
       community.docker.docker_container_info:
-        name: '{{ lidarr_authelia_name }}'
+        name: '{{ lookup("vars", role_prefix + "_authelia_container_name") }}'
       register: lidarr_authelia_container_result
 
-    - name: Lidarr config.xml | change auth method to external  ## prevents double login when using authelia
+    - name: Change auth method to external
       when:
-        - lidarr_toggles_enable_authelia
-        - lidarr_authelia_is_enabled
         - lidarr_authelia_container_result.exists
-        - ((xml_lidarr_external.matches[0].AuthenticationMethod is defined) and (xml_lidarr_external.matches[0].AuthenticationMethod != 'External'))
+        - ((lidarr_xml_external.matches[0].AuthenticationMethod is defined) and (lidarr_xml_external.matches[0].AuthenticationMethod != 'External'))
       community.general.xml:
-        path: '{{ lidarr_paths_location }}/config.xml'
+        path: '{{ lookup("vars", role_prefix + "_paths_location") }}/config.xml'
         xpath: /Config/AuthenticationMethod
         value: External
 
@@ -171,35 +188,43 @@
 # POSTGRES
 ################################
 
-- name: Include postgres container tasks
-  when: lidarr_toggles_enable_postgres
-  ansible.builtin.include_tasks: postgres/container.yml
+- name: Perform postgres tasks
+  when: (lookup("vars", role_prefix + "_toggles_enable_postgres"))
+  block:
+    - name: Postgres builtin fail
+      when: not (lookup("vars", role_prefix + "_postgres_is_enabled"))
+      ansible.builtin.fail:
+        msg: Postgres is toggled on, but one or more variables are empty.
 
-- name: Include postgres database tasks
-  when: lidarr_toggles_enable_postgres
-  ansible.builtin.include_tasks: postgres/database.yml
+    - name: Include container tasks
+      ansible.builtin.include_tasks: postgres/container.yml
 
-- name: Include postgres lidarr config.xml tasks
-  when: lidarr_toggles_enable_postgres
-  ansible.builtin.include_tasks: postgres/config_xml.yml
+    - name: Include database tasks
+      ansible.builtin.include_tasks: postgres/database.yml
+
+    - name: Include config.xml tasks
+      ansible.builtin.include_tasks: postgres/config_xml.yml
 
 ################################
 # TRAEFIK
 ################################
 
 - name: Conduct traefik tasks
-  when: 
-    - lidarr_toggles_enable_traefik
-    - lidarr_traefik_is_enabled
+  when: (lookup("vars", role_prefix + "_toggles_enable_traefik"))
   block:
+    - name: Traefik builtin fail
+      when: not (lookup("vars", role_prefix + "_traefik_is_enabled"))
+      ansible.builtin.fail:
+        msg: Traefik is toggled on, but the domain varible is empty.
+
     - name: Register traefik network
       community.docker.docker_network_info:
-        name: '{{ lidarr_traefik_network }}'
+        name: '{{ lookup("vars", role_prefix + "_traefik_network") }}'
       register: lidarr_traefik_network_result
 
     - name: Traefik builtin fail
       when:
-        - not lidarr_traefik_network_is_enabled
+        - not (lookup("vars", role_prefix + "_traefik_network_is_enabled"))
         - not lidarr_traefik_network_result.exists
       ansible.builtin.fail:
         msg: Traefik network does not exist nor is it enabled. Ensure the Traefik network variables contain valid entries.
@@ -207,20 +232,25 @@
     - name: Create traefik network
       when: not lidarr_traefik_network_result.exists
       community.docker.docker_network:
-        name: '{{ lidarr_traefik_network }}'
-        driver: '{{ lidarr_traefik_network_driver }}'
+        name: '{{ lookup("vars", role_prefix + "_traefik_network") }}'
+        driver: '{{ lookup("vars", role_prefix + "_traefik_network_driver") }}'
         ipam_config:
-          - subnet: '{{ lidarr_traefik_network_subnet }}'
+          - subnet: '{{ lookup("vars", role_prefix + "_traefik_network_subnet") }}'
 
 ################################
 # CLOUDFLARE
 ################################
 
-- name: Include cloudflare tasks
-  when: 
-    - lidarr_toggles_enable_cloudflare_dns
-    - lidarr_cloudflare_is_enabled
-  ansible.builtin.include_tasks: sub_tasks/cloudflare.yml
+- name: Perform Cloudflare DNS tasks
+  when: (lookup("vars", role_prefix + "_toggles_enable_cloudflare_dns"))
+  block:
+    - name: Cloudflare builtin fail
+      when: not (lookup("vars", role_prefix + "_cloudflare_is_enabled"))
+      ansible.builtin.fail:
+        msg: Cloudflare DNS is toggled on, but the cloudflare API token variable is empty.
+
+    - name: Include cloudflare tasks
+      ansible.builtin.include_tasks: sub_tasks/cloudflare.yml
 
 ################################
 # NFS
@@ -233,38 +263,44 @@
 # RCLONE
 ################################
 
-- name: Include rclone tasks
-  when: lidarr_toggles_enable_rclone
-  ansible.builtin.include_tasks: sub_tasks/rclone.yml
+- name: Perform rclone tasks
+  when: (lookup("vars", role_prefix + "_toggles_enable_rclone"))
+  block:
+    - name: Rclone builtin fail
+      when: not (lookup("vars", role_prefix + "_rclone_volume_is_enabled"))
+      ansible.builtin.fail:
+        msg: Rclone is toggled on, but one or more volume variables are empty.
+
+    - name: Include rclone tasks
+      ansible.builtin.include_tasks: sub_tasks/rclone.yml
 
 ################################
-# METRICS
+# PROMETHEUS
 ################################
 
-- name: Include prometheus container tasks
-  when: lidarr_toggles_enable_metrics
-  ansible.builtin.include_tasks: prometheus/container.yml
+- name: Perform Prometheus tasks
+  when: (lookup("vars", role_prefix + "_toggles_enable_metrics"))
+  block:
+    - name: Include container tasks
+      ansible.builtin.include_tasks: prometheus/container.yml
 
-- name: Include prometheus exporter tasks
-  when: lidarr_toggles_enable_metrics
-  ansible.builtin.include_tasks: prometheus/exporter.yml
+    - name: Include exporter tasks
+      ansible.builtin.include_tasks: prometheus/exporter.yml
 
-- name: Include prometheus cloudflare tasks
-  when: 
-    - lidarr_toggles_enable_metrics
-    - lidarr_prometheus_cloudflare_is_enabled
-  ansible.builtin.include_tasks: prometheus/cloudflare.yml
+    - name: Include prometheus cloudflare tasks
+      when: (lookup("vars", role_prefix + "_toggles_enable_cloudflare_dns"))
+      ansible.builtin.include_tasks: prometheus/cloudflare.yml
 
 ################################
 # THEMEPARK
 ################################
 
 - name: Run themepark tasks
-  when: lidarr_toggles_enable_themepark_local
+  when: (lookup("vars", role_prefix + "_toggles_enable_themepark_local"))
   block:
     - name: Register themepark container
       community.docker.docker_container_info:
-        name: '{{ lidarr_themepark_basics_name }}'
+        name: '{{ lookup("vars", role_prefix + "_themepark_basics_name") }}'
       register: lidarr_themepark_container_result
 
     - name: Include themepark tasks
@@ -275,29 +311,27 @@
 # CONTAINER
 ################################
 
-- name: Create lidarr container
-  when: (not lidarr_toggles_enable_traefik) or (not lidarr_traefik_is_enabled)
+- name: Create container
+  when: not (lookup("vars", role_prefix + "_toggles_enable_traefik"))
   community.docker.docker_container:
-    name: '{{ lidarr_basics_name }}'
-    image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
-    networks: '{{ lidarr_docker_networks }}'
-    env: '{{ lidarr_docker_envs }}'
+    name: '{{ lookup("vars", role_prefix + "_basics_name") }}'
+    image: '{{ lookup("vars", role_prefix + "_basics_image_repo") }}:{{ lookup("vars", role_prefix + "_basics_image_tag") }}'
+    networks: '{{ lookup("vars", role_prefix + "_networks") }}'
+    env: '{{ lookup("vars", role_prefix + "_envs") }}'
     ports:
-      - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
-    volumes: '{{ lidarr_docker_volumes }}'
-    restart_policy: '{{ lidarr_basics_restart_policy }}'
+      - '{{ lookup("vars", role_prefix + "_ports_host") }}:{{ lookup("vars", role_prefix + "_ports_cont") }}'
+    volumes: '{{ lookup("vars", role_prefix + "_volumes") }}'
+    restart_policy: '{{ lookup("vars", role_prefix + "_basics_restart_policy") }}'
 
-- name: Create lidarr traefik container
-  when:
-    - lidarr_toggles_enable_traefik
-    - lidarr_traefik_is_enabled
+- name: Create traefik container
+  when: (lookup("vars", role_prefix + "_toggles_enable_traefik"))
   community.docker.docker_container:
-    name: '{{ lidarr_basics_name }}'
-    image: '{{ lidarr_basics_image_repo }}:{{ lidarr_basics_image_tag }}'
-    networks: '{{ lidarr_docker_networks }}'
-    env: '{{ lidarr_docker_envs }}'
-    labels: '{{ lidarr_traefik_labels }}'
+    name: '{{ lookup("vars", role_prefix + "_basics_name") }}'
+    image: '{{ lookup("vars", role_prefix + "_basics_image_repo") }}:{{ lookup("vars", role_prefix + "_basics_image_tag") }}'
+    networks: '{{ lookup("vars", role_prefix + "_networks") }}'
+    env: '{{ lookup("vars", role_prefix + "_envs") }}'
+    labels: '{{ lookup("vars", role_prefix + "_labels") }}'
     ports:
-      - '{{ lidarr_ports_host }}:{{ lidarr_ports_cont }}'
-    volumes: '{{ lidarr_docker_volumes }}'
-    restart_policy: '{{ lidarr_basics_restart_policy }}'
+      - '{{ lookup("vars", role_prefix + "_ports_host") }}:{{ lookup("vars", role_prefix + "_ports_cont") }}'
+    volumes: '{{ lookup("vars", role_prefix + "_volumes") }}'
+    restart_policy: '{{ lookup("vars", role_prefix + "_basics_restart_policy") }}'

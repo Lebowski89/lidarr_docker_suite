@@ -1,0 +1,7 @@
+---
+
+################################
+# AUTHELIA
+################################
+
+lidarr_authelia_container_name: 'authelia'

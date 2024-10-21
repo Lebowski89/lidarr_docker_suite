@@ -2,83 +2,83 @@
 
 - name: Create postgres appdata directory
   ansible.builtin.file:
-    path: '{{ lidarr_postgres_paths_location }}'
+    path: '{{ lookup("vars", role_prefix + "_postgres_paths_location") }}'
     state: directory
-    owner: '{{ lidarr_postgres_env_puid }}'
-    group: '{{ lidarr_postgres_env_pgid }}'
+    owner: '{{ lookup("vars", role_prefix + "_postgres_env_puid") }}'
+    group: '{{ lookup("vars", role_prefix + "_postgres_env_pgid") }}'
     mode: '0755'
 
 - name: Create postgres keys directory
   ansible.builtin.file:
-    path: '{{ lidarr_postgres_paths_keys_location }}'
+    path: '{{ lookup("vars", role_prefix + "_postgres_paths_keys_location") }}'
     state: directory
-    owner: '{{ lidarr_postgres_env_puid }}'
-    group: '{{ lidarr_postgres_env_pgid }}'
+    owner: '{{ lookup("vars", role_prefix + "_postgres_env_puid") }}'
+    group: '{{ lookup("vars", role_prefix + "_postgres_env_pgid") }}'
     mode: '0755'
 
 - name: Check if postgres_key.txt exists
   ansible.builtin.stat:
-    path: '{{ lidarr_postgres_paths_keys_location }}/{{ lidarr_postgres_auth_password_file }}'
+    path: '{{ lookup("vars", role_prefix + "_postgres_paths_keys_location") }}/{{ lookup("vars", role_prefix + "_postgres_auth_password_file") }}'
   register: lidarr_postgres_key_txt
 
 - name: Insert postgres password into password file
   when: not lidarr_postgres_key_txt.stat.exists
   ansible.builtin.lineinfile:
-    path: '{{ lidarr_postgres_paths_keys_location }}/{{ lidarr_postgres_auth_password_file }}'
-    line: '{{ lidarr_postgres_auth_password }}'
-    owner: '{{ lidarr_postgres_env_puid }}'
-    group: '{{ lidarr_postgres_env_pgid }}'
+    path: '{{ lookup("vars", role_prefix + "_postgres_paths_keys_location") }}/{{ lookup("vars", role_prefix + "_postgres_auth_password_file") }}'
+    line: '{{ lookup("vars", role_prefix + "_postgres_auth_password") }}'
+    owner: '{{ lookup("vars", role_prefix + "_postgres_env_puid") }}'
+    group: '{{ lookup("vars", role_prefix + "_postgres_env_pgid") }}'
     mode: '0644'
     create: true
 
 - name: Register postgres network
   community.docker.docker_network_info:
-    name: '{{ lidarr_postgres_network }}'
+    name: '{{ lookup("vars", role_prefix + "_postgres_network") }}'
   register: lidarr_postgres_network_result
 
 - name: Postgres network builtin fail
   ansible.builtin.fail:
     msg: Postgres network does not exist nor is it enabled. Ensure the Postgres network variables contain valid entries.
   when:
-    - not lidarr_postgres_network_is_enabled
+    - not (lookup("vars", role_prefix + "_postgres_network_is_enabled"))
     - not lidarr_postgres_network_result.exists
 
 - name: Create postgres network
   when: not lidarr_postgres_network_result.exists
   community.docker.docker_network:
-    name: '{{ lidarr_postgres_network }}'
-    driver: '{{ lidarr_postgres_network_driver }}'
+    name: '{{ lookup("vars", role_prefix + "_postgres_network") }}'
+    driver: '{{ lookup("vars", role_prefix + "_postgres_network_driver") }}'
     ipam_config:
-      - subnet: '{{ lidarr_postgres_network_subnet }}'
+      - subnet: '{{ lookup("vars", role_prefix + "_postgres_network_subnet") }}'
 
 - name: Register postgres container
   community.docker.docker_container_info:
-    name: '{{ lidarr_postgres_basics_name }}'
+    name: '{{ lookup("vars", role_prefix + "_postgres_basics_name") }}'
   register: lidarr_postgres_container_result
 
 - name: Create postgres container
   when: not lidarr_postgres_container_result.exists
   community.docker.docker_container:
-    name: '{{ lidarr_postgres_basics_name }}'
-    image: '{{ lidarr_postgres_basics_image_repo }}:{{ lidarr_postgres_basics_image_tag }}'
+    name: '{{ lookup("vars", role_prefix + "_postgres_basics_name") }}'
+    image: '{{ lookup("vars", role_prefix + "_postgres_basics_image_repo") }}:{{ lookup("vars", role_prefix + "_postgres_basics_image_tag") }}'
     networks:
-      - name: '{{ lidarr_postgres_network }}'
+      - name: '{{ lookup("vars", role_prefix + "_postgres_network") }}'
     env:
-      PUID: '{{ lidarr_postgres_env_puid }}'
-      PGID: '{{ lidarr_postgres_env_pgid }}'
-      TZ: '{{ lidarr_postgres_env_timezone }}'
-      POSTGRES_USER: '{{ lidarr_postgres_auth_user }}'
-      POSTGRES_PASSWORD_FILE: '/keys/{{ lidarr_postgres_auth_password_file }}'
+      PUID: '{{ lookup("vars", role_prefix + "_postgres_env_puid") }}'
+      PGID: '{{ lookup("vars", role_prefix + "_postgres_env_pgid") }}'
+      TZ: '{{ lookup("vars", role_prefix + "_postgres_env_timezone") }}'
+      POSTGRES_USER: '{{ lookup("vars", role_prefix + "_postgres_auth_user") }}'
+      POSTGRES_PASSWORD_FILE: '/keys/{{ lookup("vars", role_prefix + "_postgres_auth_password_file") }}'
     ports:
-      - '{{ lidarr_postgres_ports_host }}:{{ lidarr_postgres_ports_cont }}'
-    volumes: '{{ lidarr_postgres_binds }}'
-    restart_policy: '{{ lidarr_postgres_basics_restart_policy }}'
+      - '{{ lookup("vars", role_prefix + "_postgres_ports_host") }}:{{ lookup("vars", role_prefix + "_postgres_ports_cont") }}'
+    volumes: '{{ lookup("vars", role_prefix + "_postgres_binds") }}'
+    restart_policy: '{{ lookup("vars", role_prefix + "_postgres_basics_restart_policy") }}'
 
 - name: Make sure the postgres container is started
   community.docker.docker_container:
-    name: '{{ lidarr_postgres_basics_name }}'
+    name: '{{ lookup("vars", role_prefix + "_postgres_basics_name") }}'
     state: started
-  register: start_lidarr_postgres_docker
+  register: lidarr_start_postgres_docker
   retries: 5
   delay: 10
-  until: start_lidarr_postgres_docker is succeeded
+  until: lidarr_start_postgres_docker is succeeded

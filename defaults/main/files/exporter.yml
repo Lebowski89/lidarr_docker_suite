@@ -4,10 +4,10 @@
 # BASICS
 ################################
 
-lidarr_prometheus_exporter_name: '{{ lidarr_basics_name }}_exporter'
-lidarr_prometheus_exporter_image_repo: 'ghcr.io/onedr0p/exportarr'
-lidarr_prometheus_exporter_image_tag: 'v2.0.1'
-lidarr_prometheus_exporter_restart_policy: 'unless-stopped'
+lidarr_prometheus_exporter_basics_name: '{{ lidarr_basics_name }}-exporter'
+lidarr_prometheus_exporter_basics_image_repo: 'ghcr.io/onedr0p/exportarr'
+lidarr_prometheus_exporter_basics_image_tag: 'v2.0.1'
+lidarr_prometheus_exporter_basics_restart_policy: 'unless-stopped'
 
 ################################
 # ENV
@@ -21,5 +21,5 @@ lidarr_prometheus_exporter_env_pgid: '1000'
 # PORTS
 ################################
 
-lidarr_prometheus_exporter_host_port: '9709'
-lidarr_prometheus_exporter_cont_port: '9709'
+lidarr_prometheus_exporter_ports_host: '9709'
+lidarr_prometheus_exporter_ports_cont: '9709'

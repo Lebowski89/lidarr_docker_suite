@@ -21,16 +21,16 @@ lidarr_network_traefik_bind:
 lidarr_network_prometheus_bind:
   - name: '{{ lidarr_prometheus_network }}'
 
-lidarr_docker_networks: '{{ lidarr_network_default_bind
-                            + (lidarr_network_postgres_bind
-                               if lidarr_toggles_enable_postgres
-                               else [])
-                            + (lidarr_network_traefik_bind
-                               if lidarr_toggles_enable_traefik
-                               else [])
-                            + (lidarr_network_prometheus_bind
-                               if lidarr_toggles_enable_metrics
-                               else []) }}'
+lidarr_networks: '{{ lidarr_network_default_bind
+                     + (lidarr_network_postgres_bind
+                        if lidarr_toggles_enable_postgres
+                        else [])
+                     + (lidarr_network_traefik_bind
+                        if lidarr_toggles_enable_traefik
+                        else [])
+                     + (lidarr_network_prometheus_bind
+                        if lidarr_toggles_enable_metrics
+                        else []) }}'
 
 lidarr_network_backend_is_enabled: '{{ (lidarr_network_backend_driver is defined) and
                                        (lidarr_network_backend_driver is not none) and
@@ -54,33 +54,44 @@ lidarr_env_themepark_local:
   TP_HOTIO: 'true'
   TP_THEME: '{{ lidarr_themepark_domain_local_theme }}'
 
-lidarr_docker_envs: '{{ lidarr_env_default
-                        | combine((lidarr_env_themepark_local
-                                   if lidarr_toggles_enable_themepark_local
-                                   else [])) }}'
+lidarr_envs: '{{ lidarr_env_default
+                 | combine((lidarr_env_themepark_local
+                            if lidarr_toggles_enable_themepark_local
+                            else [])) }}'
+              
+################################
+# LABELS
+################################
+
+lidarr_labels: '{{ lidarr_traefik_labels_default
+                   | combine(lidarr_traefik_labels_router)
+                   | combine(lidarr_traefik_labels_router_secure)
+                   | combine((lidarr_traefik_labels_themepark
+                              if lidarr_toggles_enable_themepark_traefik
+                              else [])) }}'
 
 ################################
 # BINDS
 ################################
 
-lidarr_docker_volumes: '{{ lidarr_volumes_binds_default
-                           + (lidarr_volumes_binds_themepark
-                              if lidarr_toggles_enable_themepark_local
-                              else [])
-                           + (lidarr_nfs_volume_bind
-                              if lidarr_toggles_enable_nfs_volume
-                              else [])
-                           + (lidarr_rclone_volume_bind
-                              if lidarr_toggles_enable_rclone
-                              else []) }}'
+lidarr_volumes: '{{ lidarr_volumes_binds_default
+                    + (lidarr_volumes_binds_themepark
+                       if lidarr_toggles_enable_themepark_local
+                       else [])
+                    + (lidarr_nfs_volume_bind
+                       if lidarr_toggles_enable_nfs_volume
+                       else [])
+                    + (lidarr_rclone_volume_bind
+                       if lidarr_toggles_enable_rclone
+                       else []) }}'
 
 ################################
 # AUTHELIA
 ################################
 
-lidarr_authelia_is_enabled: '{{ (lidarr_traefik_authelia_container_name is defined) and
-                                (lidarr_traefik_authelia_container_name is not none) and
-                                (lidarr_traefik_authelia_container_name | trim | length > 0) }}'
+lidarr_authelia_is_enabled: '{{ (lidarr_authelia_container_name is defined) and
+                                (lidarr_authelia_container_name is not none) and
+                                (lidarr_authelia_container_name | trim | length > 0) }}'
 
 ################################
 # TRAEFIK
@@ -128,13 +139,6 @@ lidarr_traefik_labels_themepark:
   traefik.http.middlewares.themepark-lidarr.plugin.themepark.app: 'lidarr'
   traefik.http.middlewares.themepark-lidarr.plugin.themepark.theme: '{{ lidarr_traefik_themepark_theme }}'
 
-lidarr_traefik_labels: '{{ lidarr_traefik_labels_default
-                           | combine(lidarr_traefik_labels_router)
-                           | combine(lidarr_traefik_labels_router_secure)
-                           | combine((lidarr_traefik_labels_themepark
-                                      if lidarr_toggles_enable_themepark_traefik
-                                      else [])) }}'
-
 lidarr_traefik_is_enabled: '{{ (lidarr_traefik_domain is defined) and
                                (lidarr_traefik_domain is not none) and
                                (lidarr_traefik_domain | trim | length > 0) }}'
@@ -178,9 +182,6 @@ lidarr_traefik_https_api_middlewares_bind: '{{ lidarr_traefik_https_api_middlewa
 ################################
 # CLOUDFLARE
 ################################
-
-lidarr_cloudflare_record: '{{ lidarr_traefik_subdomain }}'
-lidarr_cloudflare_zone: '{{ lidarr_traefik_domain }}'
 
 lidarr_cloudflare_is_enabled: '{{ (lidarr_cloudflare_api_token is defined) and
                                   (lidarr_cloudflare_api_token is not none) and

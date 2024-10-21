@@ -39,8 +39,7 @@ lidarr_postgres_ports_cont: '5432'
 
 lidarr_postgres_paths_folder: '{{ lidarr_postgres_basics_name }}'  # name of postgres folder
 lidarr_postgres_paths_location: '/opt/{{ lidarr_postgres_paths_folder }}' # path of postgres folder
-lidarr_postgres_paths_keys_folder: 'keys'
-lidarr_postgres_paths_keys_location: '{{ lidarr_postgres_paths_location }}/{{ lidarr_postgres_paths_keys_folder }}'
+lidarr_postgres_paths_keys_location: '{{ lidarr_postgres_paths_location }}/keys'
 
 ################################
 # BINDS
@@ -66,3 +65,7 @@ lidarr_postgres_auth_password_file: 'postgres_key.txt'  ## will be created by ro
 
 lidarr_postgres_database_main: 'lidarr-main'
 lidarr_postgres_database_log: 'lidarr-log'
+
+
+
+

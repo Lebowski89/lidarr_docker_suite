@@ -1,0 +1,15 @@
+---
+
+################################
+# DNS
+################################
+
+  ## lidarr
+lidarr_cloudflare_record_type: 'A'  ## A (IPV4), AAAA (IPV6), CNAME, etc
+lidarr_cloudflare_proxy: 'true'  ## true for cloudflare DNS SSL
+lidarr_cloudflare_api_token: ''
+
+  ## prometheus
+lidarr_prometheus_cloudflare_record_type: 'A'  ## A (IPV4), AAAA (IPV6), CNAME, etc
+lidarr_prometheus_cloudflare_proxy: 'true'  ## true for cloudflare DNS SSL
+lidarr_prometheus_cloudflare_api_token: '{{ lidarr_cloudflare_api_token }}'
