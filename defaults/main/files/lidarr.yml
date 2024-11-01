@@ -1,0 +1,57 @@
+---
+
+################################
+# API
+################################
+
+lidarr_api_key: ''
+
+################################
+# BASICS
+################################
+
+lidarr_basics_name: 'lidarr'
+lidarr_basics_image_repo: 'ghcr.io/hotio/lidarr'
+lidarr_basics_image_tag: 'nightly'
+lidarr_basics_restart_policy: 'unless-stopped'
+
+################################
+# NETWORK
+################################
+
+  ## backend
+lidarr_network_backend: 'proxy'  ## allows backend docker communication between lidarr and companion apps
+lidarr_network_backend_driver: 'bridge'  ## only required if network doesn't exist
+lidarr_network_backend_subnet: ''  ## only required if network doesn't exist
+
+################################
+# ENV
+################################
+
+lidarr_env_timezone: 'Etc/UTC'
+lidarr_env_puid: '1000'
+lidarr_env_pgid: '1000'
+
+################################
+# PORTS
+################################
+
+lidarr_ports_host: '8686'
+lidarr_ports_cont: '8686'
+
+################################
+# PATHS
+################################
+
+lidarr_paths_folder: '{{ lidarr_basics_name }}'
+lidarr_paths_location: '/opt/{{ lidarr_paths_folder }}'
+
+################################
+# BINDS
+################################
+
+lidarr_volumes_binds_default:
+  - /etc/localtime:/etc/localtime:ro
+  - '{{ lidarr_paths_location }}:/config'
+lidarr_volumes_binds_themepark:  ## only binds if local themepark is deployed
+  - '{{ lidarr_themepark_paths_location }}/docker-mods/98-themepark-lidarr:/etc/cont-init.d/98-themepark'
